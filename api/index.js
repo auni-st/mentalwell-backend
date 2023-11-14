@@ -9,6 +9,10 @@ app.get('/api', (req, res) => {
   res.send('Hello, this is API');
 });
 
+app.get('/user', (req, res) => {
+  res.send('Hello, this is for showing all Users');
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
