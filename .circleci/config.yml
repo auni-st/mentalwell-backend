@@ -18,9 +18,9 @@ jobs:
       - image: circleci/node:16
     steps:
       - checkout
-      - run:
-          name: Install Vercel CLI
-          command: sudo npm install --global vercel@latest
+      # - run:
+      #     name: Install Vercel CLI
+      #     command: sudo npm install --global vercel@latest
       - run:
           name: Pull
           command: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
