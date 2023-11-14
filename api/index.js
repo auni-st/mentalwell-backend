@@ -10,7 +10,7 @@ app.get('/api', (req, res) => {
 });
 
 app.get('/user', (req, res) => {
-  res.send('Hello, this is for showing all Users');
+  res.send('Hello, this is for showing all changed');
 });
 
 const PORT = process.env.PORT || 3000;
