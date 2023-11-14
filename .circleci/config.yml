@@ -1,14 +1,14 @@
 version: 2.1
 
 jobs:
-  build:
-    docker:
-      - image: circleci/node:16
-    steps:
-      - checkout
-      - run:
-          name: Install Dependencies
-          command: sudo npm install @vercel/node
+  # build:
+  #   docker:
+  #     - image: circleci/node:16
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Install Dependencies
+  #         command: sudo npm install @vercel/node
   test:
     docker:
       - image: circleci/node:16
@@ -37,10 +37,8 @@ workflows:
   version: 2
   build_test_deploy:
     jobs:
-      - build
-      - test:
-          requires:
-            - build
+      # - build
+      - test
       - deploy:
           requires:
             - test
