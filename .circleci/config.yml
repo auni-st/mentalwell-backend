@@ -31,7 +31,7 @@ jobs:
           command: sudo npm install --global vercel@latest
       - run:
           name: Deploy to Vercel
-          command: vercel --token $VERCEL_TOKEN --prod nodejs18.x --yes
+          command: vercel --token $VERCEL_TOKEN --prod --yes
 
 workflows:
   version: 2
