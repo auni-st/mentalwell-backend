@@ -21,9 +21,9 @@ jobs:
       - run:
           name: Install Vercel CLI
           command: sudo npm install --global vercel@latest
-      - run:
-          name: Pull
-          command: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+      # - run:
+      #     name: Pull
+      #     command: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
       - run:
           name: Build 
           command: vercel build --token $VERCEL_TOKEN --prod
