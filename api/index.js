@@ -3,6 +3,7 @@ const app = express();
 
 app.get('/', (req, res) => {
   res.send('Hello, Vercel and Express.js!');
+  res.send('Hello again!')
 });
 
 const PORT = process.env.PORT || 3000;
