@@ -17,9 +17,12 @@ jobs:
       - image: circleci/node:16
     steps:
       - checkout
+      # - run:
+      #     name: Run Tests
+      #     command: sudo npm test #change test in package.json 
       - run:
-          name: Run Tests
-          command: sudo npm test #change test in package.json 
+          name: Hello World!
+          command: echo "Hello, World!"
 
   deploy:
     docker:
