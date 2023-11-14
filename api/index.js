@@ -13,6 +13,10 @@ app.get('/user', (req, res) => {
   res.send('Hello, this is for showing all changed 12345600000 I CHANGED SOMETHING');
 });
 
+app.get('/auni', (req, res) => {
+  res.send('Hello, this is auni');
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
