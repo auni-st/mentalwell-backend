@@ -16,9 +16,6 @@ jobs:
   deploy:
     docker:
       - image: circleci/node:16
-    environment:
-      VERCEL_ORG_ID: $VERCEL_ORG_ID
-      VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
     steps:
       - checkout
       - run:
@@ -32,7 +29,7 @@ jobs:
           command: vercel build --token $VERCEL_TOKEN --prod
       - run:
           name: Deploy
-          command: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+          command: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN -O $VERCEL_ORG_ID -P $VERCEL_PROJECT_ID
 
 workflows:
   version: 2
