@@ -29,7 +29,7 @@ jobs:
           command: vercel build --token $VERCEL_TOKEN --prod
       - run:
           name: Deploy
-          command: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN -O $VERCEL_ORG_ID -P $VERCEL_PROJECT_ID
+          command: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN --scope $VERCEL_ORG_ID/$VERCEL_PROJECT_ID
 
 workflows:
   version: 2
