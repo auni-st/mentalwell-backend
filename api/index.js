@@ -14,7 +14,7 @@ app.get('/user', (req, res) => {
 });
 
 app.get('/auni', (req, res) => {
-  res.send('Hello, this is auni');
+  res.send('Hello, this is auni. ADA YANG BERUBAH');
 });
 
 const PORT = process.env.PORT || 3000;
