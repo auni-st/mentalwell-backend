@@ -18,7 +18,19 @@ app.use(bodyParser.json());
 
 app.get('/items', async (req, res) => {
   try {
-    let { data, error } = await supabase.from('items').select('*');
+    const { data, error } = await supabase.from('items').select('*');
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching data from Supabase:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get('/items/:id', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('items').select('*').is('id', req.params.id);
     if (error) throw error;
 
     res.json(data);
