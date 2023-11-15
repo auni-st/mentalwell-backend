@@ -41,6 +41,57 @@ app.get('/items/:id', async (req, res) => {
   }
 });
 
+app.post('/items', async (req, res) => {
+  const newItem = req.body;
+
+  try {
+    const { data, error } = await supabase.from('items').insert([newItem]);
+    if (error) throw error;
+
+    res.status(201).json(data[0]);
+  } catch (error) {
+    console.error('Error fetching data from Supabase:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+})
+
+app.put('/items/:id', async (req, res) => {
+  const itemId = req.params.id;
+  const updatedItem = req.body;
+
+  try {
+    const { data, error } = await supabase.from('items').update(updatedItem).eq('id', itemId);
+    if (error) throw error;
+
+    if (data.length === 0) {
+      res.status(404).json({ message: 'Item not found' });
+    } else {
+      res.json(data[0]);
+    }
+  } catch (error) {
+    console.error('Error updating item in Supabase:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+})
+
+app.delete('/items/:id', async (req, res) => {
+  const itemId = req.params.id;
+
+  try {
+    const { data, error } = await supabase.from('items').delete().eq('id', itemId);
+    if (error) throw error;
+
+    if (data.length === 0) {
+      res.status(404).json({ message: 'Item not found' });
+    } else {
+      res.json({ message: 'Item deleted successfully' });
+    }
+  } catch (error) {
+    console.error('Error deleting item in Supabase:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // app.get('/items', (req, res) => {
 //   res.json(items);
 // })
