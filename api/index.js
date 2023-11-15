@@ -29,8 +29,9 @@ app.get('/items', async (req, res) => {
 });
 
 app.get('/items/:id', async (req, res) => {
+  const itemId = req.params.id;
   try {
-    const { data, error } = await supabase.from('items').select('*').is('id', req.params.id);
+    const { data, error } = await supabase.from('items').select('*').eq('id', itemId);
     if (error) throw error;
 
     res.json(data);
