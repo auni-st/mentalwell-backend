@@ -1,8 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
+const supabaseUrl = 'https://xobmwlomdcnugqxqcwzq.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvYm13bG9tZGNudWdxeHFjd3pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDAwMjY4MzcsImV4cCI6MjAxNTYwMjgzN30.dw6wBFFtXJBZZDvW5W_qNHzRL-B7pm6-HQOCy1ABoK8';
 const PORT = process.env.PORT || 3000;
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(bodyParser.json());
 
@@ -10,6 +15,18 @@ let items = [
   {id: 1, name: 'Item 1'},
   {id: 2, name: 'Item 2'},
 ];
+
+app.get('/data', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('items').select('*');
+    if (error) throw error;
+    
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching data from Supabase:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 app.get('/items', (req, res) => {
   res.json(items);
