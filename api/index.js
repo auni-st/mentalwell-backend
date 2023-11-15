@@ -11,14 +11,14 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(bodyParser.json());
 
-let items = [
-  {id: 1, name: 'Item 1'},
-  {id: 2, name: 'Item 2'},
-];
+// let items = [
+//   {id: 1, name: 'Item 1'},
+//   {id: 2, name: 'Item 2'},
+// ];
 
-app.get('/data', async (req, res) => {
+app.get('/items', async (req, res) => {
   try {
-    let { data: items, error } = await supabase.from('items').select('*');
+    let { data, error } = await supabase.from('items').select('*');
     if (error) throw error;
 
     res.json(data);
@@ -28,50 +28,50 @@ app.get('/data', async (req, res) => {
   }
 });
 
-app.get('/items', (req, res) => {
-  res.json(items);
-})
+// app.get('/items', (req, res) => {
+//   res.json(items);
+// })
 
-app.get('/items/:id', (req, res) => {
-  const itemId = parseInt(req.params.id);
-  const item = items.find((item) => item.id === itemId);
+// app.get('/items/:id', (req, res) => {
+//   const itemId = parseInt(req.params.id);
+//   const item = items.find((item) => item.id === itemId);
 
-  if (item) {
-    res.json(item);
-  } else {
-    res.status(404).json({ message: 'Item not found' });
-  }
-})
+//   if (item) {
+//     res.json(item);
+//   } else {
+//     res.status(404).json({ message: 'Item not found' });
+//   }
+// })
 
-app.post('/items', (req, res) => {
-  const newItem = req.body;
-  newItem.id = items.length + 1;
-  items.push(newItem);
-  res.status(201).json(newItem);
-})
+// app.post('/items', (req, res) => {
+//   const newItem = req.body;
+//   newItem.id = items.length + 1;
+//   items.push(newItem);
+//   res.status(201).json(newItem);
+// })
 
-app.put('/items/:id', (req, res) => {
-  const itemId = parseInt(req.params.id);
-  const updatedItem = req.body;
-  const index = items.findIndex((item) => item.id === itemId);
+// app.put('/items/:id', (req, res) => {
+//   const itemId = parseInt(req.params.id);
+//   const updatedItem = req.body;
+//   const index = items.findIndex((item) => item.id === itemId);
 
-  if (index !== -1) {
-    items[index] = { ...items[index], ...updatedItem };
-    res.json(items[index]);
-  } else {
-    res.status(404).json({ message: 'Item not found' });
-  }
-})
+//   if (index !== -1) {
+//     items[index] = { ...items[index], ...updatedItem };
+//     res.json(items[index]);
+//   } else {
+//     res.status(404).json({ message: 'Item not found' });
+//   }
+// })
 
-app.delete('/items/:id', (req, res) => {
-  const itemId = parseInt(req.params.id);
-  items = items.filter((item) => item.id !== itemId);
-  res.json({ message: 'Item deleted successfully' });
-});
+// app.delete('/items/:id', (req, res) => {
+//   const itemId = parseInt(req.params.id);
+//   items = items.filter((item) => item.id !== itemId);
+//   res.json({ message: 'Item deleted successfully' });
+// });
 
-app.get('/', (req, res) => {
-  res.send('Hello. This Backend App is working!');
-});
+// app.get('/', (req, res) => {
+//   res.send('Hello. This Backend App is working!');
+// });
 
 // app.get('/api', (req, res) => {
 //   res.send('Hello, this is API changed againnn');
