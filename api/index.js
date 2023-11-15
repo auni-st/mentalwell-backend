@@ -18,7 +18,7 @@ let items = [
 
 app.get('/data', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('items').select('*');
+    let { data: items, error } = await supabase.from('items').select('*');
     if (error) throw error;
 
     res.json(data);
@@ -69,9 +69,9 @@ app.delete('/items/:id', (req, res) => {
   res.json({ message: 'Item deleted successfully' });
 });
 
-// app.get('/', (req, res) => {
-//   res.send('Hello, Vercel and Express.js!');
-// });
+app.get('/', (req, res) => {
+  res.send('Hello. This Backend App is working!');
+});
 
 // app.get('/api', (req, res) => {
 //   res.send('Hello, this is API changed againnn');
