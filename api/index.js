@@ -15,6 +15,43 @@ app.get('/items', (req, res) => {
   res.json(items);
 })
 
+app.get('/items/:id', (req, res) => {
+  const itemId = parseInt(req.params.id);
+  const item = items.find((item) => item.id === itemId);
+
+  if (item) {
+    res.json(item);
+  } else {
+    res.status(404).json({ message: 'Item not found' });
+  }
+})
+
+app.post('/items', (req, res) => {
+  const newItem = req.body;
+  newItem.id = items.length + 1;
+  items.push(newItem);
+  res.status(201).json(newItem);
+})
+
+app.put('/items/:id', (req, res) => {
+  const itemId = parseInt(req.params.id);
+  const updatedItem = req.body;
+  const index = items.findIndex((item) => item.id === itemId);
+
+  if (index !== -1) {
+    items[index] = { ...items[index], ...updatedItem };
+    res.json(items[index]);
+  } else {
+    res.status(404).json({ message: 'Item not found' });
+  }
+})
+
+app.delete('/items/:id', (req, res) => {
+  const itemId = parseInt(req.params.id);
+  items = items.filter((item) => item.id !== itemId);
+  res.json({ message: 'Item deleted successfully' });
+});
+
 // app.get('/', (req, res) => {
 //   res.send('Hello, Vercel and Express.js!');
 // });
