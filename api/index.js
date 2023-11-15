@@ -18,9 +18,9 @@ let items = [
 
 app.get('/data', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('items').select('*');
+    const { data, error } = await supabase.from('items').select('*').subscribe();
     if (error) throw error;
-    
+
     res.json(data);
   } catch (error) {
     console.error('Error fetching data from Supabase:', error);
