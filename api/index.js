@@ -18,7 +18,7 @@ let items = [
 
 app.get('/data', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('items').select('*').subscribe();
+    const { data, error } = await supabase.from('items').select('*');
     if (error) throw error;
 
     res.json(data);
