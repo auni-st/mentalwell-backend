@@ -1,153 +1,397 @@
+require('dotenv').config();
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const { createClient } = require('@supabase/supabase-js');
+const bcrypt = require('bcrypt');
+const jwt = require("jsonwebtoken");
 
 const app = express();
-const supabaseUrl = 'https://xobmwlomdcnugqxqcwzq.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvYm13bG9tZGNudWdxeHFjd3pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDAwMjY4MzcsImV4cCI6MjAxNTYwMjgzN30.dw6wBFFtXJBZZDvW5W_qNHzRL-B7pm6-HQOCy1ABoK8';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 const PORT = process.env.PORT || 3000;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+const phoneRegex = /^\d{1,13}$/; 
+
 app.use(bodyParser.json());
 
-// let items = [
-//   {id: 1, name: 'Item 1'},
-//   {id: 2, name: 'Item 2'},
-// ];
-
-app.get('/items', async (req, res) => {
-  try {
-    const { data, error } = await supabase.from('items').select('*');
-    if (error) throw error;
-
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching data from Supabase:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-app.get('/items/:id', async (req, res) => {
-  const itemId = req.params.id;
-  try {
-    const { data, error } = await supabase.from('items').select('*').eq('id', itemId);
-    if (error) throw error;
-
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching data from Supabase:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-app.post('/items', async (req, res) => {
-  const newItem = req.body;
-
-  try {
-    const { data, error } = await supabase.from('items').insert([newItem]);
-    if (error) throw error;
-
-    res.status(201).json(data[0]);
-  } catch (error) {
-    console.error('Error fetching data from Supabase:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+// routes
+app.get('/helloWorld', async(req, res) => {
+  res.json({message: 'HELLO WORLD!'})
 })
 
-app.put('/items/:id', async (req, res) => {
-  const itemId = req.params.id;
-  const updatedItem = req.body;
+// app.get('/users', async (req, res) => {
+//   const { data, error } = await supabase.from('users').select('*');
+//   res.json(data);
+// })
+
+app.post('/login', async (req, res, next) => {
+  const { email, password } = req.body;
 
   try {
-    const { data, error } = await supabase.from('items').update(updatedItem).eq('id', itemId);
-    if (error) throw error;
+    // Check if the user exists in Supabase
+    const { data, error } = await supabase.from('users').select('id, email, password, name, role').eq('email', email).single();
+    const passwordMatch = await bcrypt.compare(password, data.password)
 
-    if (data.length === 0) {
-      res.status(404).json({ message: 'Item not found' });
+    if (passwordMatch) {
+      let token;
+      try {
+        token = jwt.sign(
+          { id: data.id, email: data.email, name: data.name, role: data.role },
+          "secretkeyappearshere",
+          { expiresIn: "1w" }
+        );
+        res.status(200).json({ message: 'success', data: { id: data.id, email: data.email, name: data.name, role: data.role, token: token } })
+      } catch (err) {
+        console.log(err);
+        const error = new Error("Error! Something went wrong.");
+        return next(error);
+      }
     } else {
-      res.json(data[0]);
+      res.status(401).json({ message: 'invalid credentials' })
     }
+
   } catch (error) {
-    console.error('Error updating item in Supabase:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Supabase error:', error.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
+
 })
 
-app.delete('/items/:id', async (req, res) => {
-  const itemId = req.params.id;
+app.get('/accessResource', (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
 
+  //Decode token
+  const decodedToken = jwt.verify(token, "secretkeyappearshere");
+  res.status(200).json({ message: 'success', data: { id: decodedToken.id, email: decodedToken.email, name: decodedToken.name, role: decodedToken.role } });
+})
+
+
+app.post('/users', async (req, res) => {
+  const { name, email, password, password_confirm, phone_number, role = 'patient' } = req.body;
+
+  //email validation
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  //password validation
+  if (!passwordRegex.test(password)) {
+    return res.status(400).json({ error: 'Invalid password format. Password must be at least 8 characters, with letters and numbers' });
+  }
+
+  //password_confirm check
+  if (password !== password_confirm) {
+    return res.status(400).json({ error: 'Password confirmation does not match password' })
+  }
+  //phone_number validation
+  if (!phoneRegex.test(phone_number)) {
+    return res.status(400).json({ error: 'Phone number must be less than 14 digits' });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  //check if email exists
+  const { data: existingEmail, error: selectError } = await supabase.from('users').select('email').eq('email', email);
+
+  if (selectError) {
+    console.error('Supabase Select Error:', selectError.message);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+
+  if (existingEmail.length > 0) {
+    return res.status(400).json({ error: 'Email is already taken' });
+  }
+
+  //insert to users table
+  const { data, e } = await supabase.from('users').upsert([{ name, email, password: hashedPassword, phone_number, role }], { onConflict: ['email'] });
+
+  //insert to patients table if role == patient and insert to psychologists table if role == psychologist
+  const getUserRole = await supabase.from('users').select('role').order('created_at', { ascending: false }).limit(1);
+  const getUserRoleOnly = getUserRole.data[0].role;
+  const userId = await supabase.from('users').select('id').order('created_at', { ascending: false }).limit(1);
+  const userIdOnly = userId.data[0].id;
+
+  if (getUserRoleOnly == 'patient') {
+    const { patient } = await supabase.from('patients').upsert([{ user_id: userIdOnly }])
+  } else if (getUserRoleOnly == 'psychologist') {
+    const { psychologist } = await supabase.from('psychologists').upsert([{ user_id: userIdOnly }])
+
+  }
+
+  //show user
+  const createdUser = await supabase.from('users').select('*').order('created_at', { ascending: false }).limit(1);
+
+  const { error, status, statusText, count, ...cleanedData } = createdUser;
+  const cleanedDataObject = cleanedData.data[0];
+  const cleanedDataOnly = {
+    name: cleanedDataObject.name,
+    email: cleanedDataObject.email,
+    phone_number: cleanedDataObject.phone_number,
+    created_at: cleanedDataObject.created_at
+  }
+
+  if (e) {
+    res.status(500).json({ error: 'user not created' });
+  }
+
+  res.status(201).json({ message: 'registration success', cleanedDataOnly });
+})
+
+app.post('/articles', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+  const psychologistId = await supabase.from('psychologists').select('id').eq('user_id', currentUser.id).single();
+
+  if (currentUser.role !== "psychologist") {
+    res.status(401).json({message: 'create article can only be done by psychologist!'})
+  }
+
+  const { title, content, references } = req.body
+  const { data, e } = await supabase.from('articles').upsert([{ psychologist_id: psychologistId.data.id, title, content, references }]);
+
+  const createdArticle = await supabase.from('articles').select('psychologist_id, title, content, references').order('created_at', { ascending: false }).limit(1);
+  res.status(201).json({ message: 'article create success', data: { author: currentUser.name, title: createdArticle.data[0].title, content: createdArticle.data[0].content, references: createdArticle.data[0].references } })
+
+})
+
+app.get('/articles', async (req, res) => {
+  const { data, error } = await supabase.from('articles').select('id, title, content, created_at');
+  res.json(data);
+})
+
+app.get('/articles/:id', async (req, res) => {
+  const articleId = req.params.id;
   try {
-    const { data, error } = await supabase.from('items').delete().eq('id', itemId);
-    if (error) throw error;
+    const { data, e } = await supabase.from('articles').select('*').eq('id', articleId);
+    const psychologistData = data[0].psychologist_id;
 
-    if (data.length === 0) {
-      res.status(404).json({ message: 'Item not found' });
-    } else {
-      res.json({ message: 'Item deleted successfully' });
-    }
-  } catch (error) {
-    console.error('Error deleting item in Supabase:', error);
+    const psychologistName = await supabase.from('psychologists').select(`id, users (name)`).eq('id', psychologistData)
+    const { error, status, statusText, count, ...cleanedData } = psychologistName;
+    const nameOnlyObject = cleanedData.data[0].users.name;
+
+    if (e) throw e;
+
+    res.json({ data: { author: nameOnlyObject, title: data[0].title, content: data[0].content, references: data[0].references, created_at: data[0].created_at } });
+  } catch (e) {
+    console.error('Error fetching data from Supabase:', e);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-});
 
-// app.get('/items', (req, res) => {
-//   res.json(items);
-// })
+})
 
-// app.get('/items/:id', (req, res) => {
-//   const itemId = parseInt(req.params.id);
-//   const item = items.find((item) => item.id === itemId);
+app.get('/psychologists', async (req, res) => {
+  const { data, e } = await supabase.from('psychologists').select('user_id, topics, availability');
+  const userIds = data.map(item => item.user_id)
+  const { data: usersData, error } = await supabase.from('users').select('id, name').in('id', userIds);
+  const usersMap = new Map(usersData.map(user => [user.id, user.name]));
 
-//   if (item) {
-//     res.json(item);
-//   } else {
-//     res.status(404).json({ message: 'Item not found' });
-//   }
-// })
+  const updatedData = data.map(item => ({
+    name: usersMap.get(item.user_id),
+    topics: item.topics,
+    availability: item.availability
+  }));
 
-// app.post('/items', (req, res) => {
-//   const newItem = req.body;
-//   newItem.id = items.length + 1;
-//   items.push(newItem);
-//   res.status(201).json(newItem);
-// })
+  res.json({ updatedData });
+})
 
-// app.put('/items/:id', (req, res) => {
-//   const itemId = parseInt(req.params.id);
-//   const updatedItem = req.body;
-//   const index = items.findIndex((item) => item.id === itemId);
+app.get('/psychologists/:id', async (req, res) => {
+  const psychologistId = req.params.id;
+  const { data, e } = await supabase.from('psychologists').select('user_id, bio, topics, availability, experience').eq('id', psychologistId);
+  const userId = data.map(item => item.user_id)
+  const { data: usersData, error } = await supabase.from('users').select('id, name').in('id', userId);
+  const usersMap = new Map(usersData.map(user => [user.id, user.name]));
 
-//   if (index !== -1) {
-//     items[index] = { ...items[index], ...updatedItem };
-//     res.json(items[index]);
-//   } else {
-//     res.status(404).json({ message: 'Item not found' });
-//   }
-// })
+  const reviews = await supabase.from('psychologists').select('id, counselings (review, patients (users (name)))').eq('id', psychologistId)
 
-// app.delete('/items/:id', (req, res) => {
-//   const itemId = parseInt(req.params.id);
-//   items = items.filter((item) => item.id !== itemId);
-//   res.json({ message: 'Item deleted successfully' });
-// });
+  const patientsReview = reviews.data[0].counselings.map(counseling => ({
+    patient_name: counseling.patients?.users.name,
+    review: counseling.review
+  }))
 
-// app.get('/', (req, res) => {
-//   res.send('Hello. This Backend App is working!');
-// });
+  const updatedData = data.map(item => ({
+    name: usersMap.get(item.user_id),
+    bio: item.bio,
+    topics: item.topics,
+    availability: item.availability,
+    experience: item.experience
+  }));
 
-// app.get('/api', (req, res) => {
-//   res.send('Hello, this is API changed againnn');
-// });
+  res.status(200).json({ data: { updatedData, patientsReview } })
+})
 
-// app.get('/user', (req, res) => {
-//   res.send('Hello, this is for showing all changed 12345600000 I CHANGED SOMETHING');
-// });
+app.post('/counselings/psychologists/:id', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
 
-// app.get('/auni', (req, res) => {
-//   res.send('Hello, this is auni. ADA YANG BERUBAH');
-// });
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  if (currentUser.role !== "patient") {
+    res.status(401).json({ message: 'create counseling can only be done by patient!' })
+  }
+
+  const currentPatient = await supabase.from('patients').select('id').eq('user_id', currentUser.id)
+
+  const { full_name, nickname, birthdate, gender, phone_number, occupation, schedule_date, schedule_time, type, problem_description, hope_after } = req.body
+  const { data, e } = await supabase.from('counselings').upsert([{ patient_id: currentPatient.data[0].id, psychologist_id: parseInt(req.params.id), full_name, nickname, birthdate, gender, phone_number, occupation, schedule_date, schedule_time, type, problem_description, hope_after }]);
+  const createdCounseling = await supabase.from('counselings').select('full_name, nickname, birthdate, gender, phone_number, occupation, schedule_date, schedule_time, type, problem_description, hope_after').order('created_at', { ascending: false }).limit(1);
+
+  res.status(201).json({ data: createdCounseling.data[0] })
+})
+
+app.get('/counselings/:id', async (req, res) => {
+  const counselingId = parseInt(req.params.id);
+  const createdCounseling = await supabase.from('counselings').select('full_name, nickname, phone_number, schedule_date, schedule_time, type').eq('id', counselingId).single();
+
+  res.json(createdCounseling.data)
+})
+
+app.get('/history', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  if (currentUser.role !== "patient") {
+    res.status(401).json({ message: 'check counseling history can only be done by patient!' })
+  }
+
+  const currentPatient = await supabase.from('patients').select('*').eq('user_id', currentUser.id)
+  const currentPatientData = currentPatient.data[0]
+
+
+  const history = await supabase.from('counselings').select('*').eq('patient_id', currentPatientData.id);
+
+  const { data, error } = await supabase.from('counselings').select(`schedule_date, schedule_time, type, status, psychologists (users(name))`).eq('patient_id', currentPatientData.id)
+
+  const counselingData = data.map(counseling => ({
+    psychologist_name: counseling.psychologists?.users?.name,
+    schedule_date: counseling.schedule_date,
+    schedule_time: counseling.schedule_time,
+    type: counseling.type,
+    status: counseling.status,
+  }));
+
+  res.json(counselingData)
+
+})
+
+app.post('/history/counselings/:id', async (req, res) => {
+  const counselingId = req.params.id;
+  const { review } = req.body;
+
+  const data = await supabase.from('counselings').update({ review: review }).eq('id', counselingId)
+  const addedReview = await supabase.from('counselings').select('*').eq('id', counselingId)
+
+  res.json({ message: addedReview })
+})
+
+app.get('/counselings/psychologist/:id', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  if (currentUser.role !== "psychologist") {
+    res.status(401).json({ message: 'dashboard psychologist can only be seen by psychologist!' })
+  }
+
+  const psychologistId = req.params.id;
+  const data = await supabase.from('counselings').select('patients (users (name)), schedule_date, schedule_time, type, status').eq('psychologist_id', psychologistId)
+
+  const counselingData = data.data.map(counseling => ({
+    patient_name: counseling.patients?.users?.name,
+    schedule_date: counseling.schedule_date,
+    schedule_time: counseling.schedule_time,
+    type: counseling.type,
+    status: counseling.status,
+  }));
+
+
+  res.json(counselingData)
+})
+
+app.get('/dashboard/counseling/:id', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  if (currentUser.role !== "psychologist") {
+    res.status(401).json({ message: 'counseling detail can only be seen by psychologist!' })
+  }
+
+  const counselingId = req.params.id;
+
+  const data = await supabase.from('counselings').select('patients (users(name)), schedule_date, schedule_time, type, problem_description, hope_after, status').eq('id', counselingId)
+
+  const counselingData = data.data.map(counseling => ({
+    patient_name: counseling.patients?.users?.name,
+    schedule_date: counseling.schedule_date,
+    schedule_time: counseling.schedule_time,
+    type: counseling.type,
+    problem_description: counseling.problem_description,
+    hope_after: counseling.hope_after,
+    status: counseling.status,
+  }));
+
+  res.json(counselingData)
+})
+
+app.put('/dashboard/counseling/:id', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  if (currentUser.role !== "psychologist") {
+    res.status(401).json({ message: 'changing counseling status to done can only be seen by psychologist!' })
+  }
+
+  const counselingId = req.params.id;
+  const { newStatus } = req.body;
+
+  const { data, error } = await supabase.from('counselings').update({ status: newStatus }).eq('id', counselingId);
+
+  const viewData = await supabase.from('counselings').select('status').eq('id', counselingId);
+
+
+  res.json(viewData.data)
+})
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
