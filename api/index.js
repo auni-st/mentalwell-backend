@@ -15,13 +15,13 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-const phoneRegex = /^\d{1,13}$/; 
+const phoneRegex = /^\d{1,13}$/;
 
 app.use(bodyParser.json());
 
 // routes
-app.get('/helloWorld', async(req, res) => {
-  res.json({message: 'HELLO WORLD!'})
+app.get('/helloWorld', async (req, res) => {
+  res.json({ message: 'HELLO WORLD!' })
 })
 
 // app.get('/users', async (req, res) => {
@@ -158,7 +158,7 @@ app.post('/articles', async (req, res) => {
   const psychologistId = await supabase.from('psychologists').select('id').eq('user_id', currentUser.id).single();
 
   if (currentUser.role !== "psychologist") {
-    res.status(401).json({message: 'create article can only be done by psychologist!'})
+    res.status(401).json({ message: 'create article can only be done by psychologist!' })
   }
 
   const { title, content, references } = req.body
@@ -305,7 +305,7 @@ app.post('/history/counselings/:id', async (req, res) => {
   const data = await supabase.from('counselings').update({ review: review }).eq('id', counselingId)
   const addedReview = await supabase.from('counselings').select('*').eq('id', counselingId)
 
-  res.json({ message: addedReview })
+  res.json({data: {review: addedReview.data[0].review}})
 })
 
 app.get('/counselings/psychologist/:id', async (req, res) => {
