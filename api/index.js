@@ -145,6 +145,71 @@ app.post('/users', async (req, res) => {
   res.status(201).json({ message: 'registration success', cleanedDataOnly });
 })
 
+app.get('/patient/:id', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  if (currentUser.role !== "patient") {
+    res.status(401).json({ message: 'profile patient can only be done by patient!' })
+  }
+
+  const patientData = await supabase.from('patients').select('id, users (email, phone_number, birthdate, gender)').eq('user_id', currentUser.id).single();
+
+  res.json(patientData.data)
+})
+
+app.put('/patient/:id', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  if (currentUser.role !== "patient") {
+    res.status(401).json({ message: 'create counseling can only be done by patient!' })
+  }
+
+  const { newPhone_number, newBirthdate, newGender } = req.body;
+  const editPatientData = await supabase.from('users').update({phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender}).eq('id', currentUser.id)
+
+  const data = await supabase.from('users').select('phone_number, birthdate, gender').eq('id', currentUser.id).single();
+  res.json(data.data);
+})
+
+app.put('/psychologist/:id', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+  const psychologistId = await supabase.from('psychologists').select('id').eq('user_id', currentUser.id).single();
+
+  if (currentUser.role !== "psychologist") {
+    res.status(401).json({ message: 'create article can only be done by psychologist!' })
+  }
+
+  const {newPhone_number, newBirthdate, newGender, newTopics, newBio} = req.body
+
+  const editPsychologistData1 = await supabase.from('users').update({phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender}).eq('id', currentUser.id)
+  const editPsychologistData2 = await supabase.from('psychologists').update({topics: newTopics, bio: newBio}).eq('user_id', currentUser.id)
+
+  const updatedData = await supabase.from('users').select('phone_number, birthdate, gender, psychologists (topics, bio)').eq('id', currentUser.id).single();
+
+  res.json(updatedData.data);
+})
+
 app.post('/articles', async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
@@ -194,18 +259,24 @@ app.get('/articles/:id', async (req, res) => {
 })
 
 app.get('/psychologists', async (req, res) => {
-  const { data, e } = await supabase.from('psychologists').select('user_id, topics, availability');
+  const { data, e } = await supabase.from('psychologists').select('id, user_id, experience, topics, availability, counselings (review:count)').order('id', { ascending: true });
+
   const userIds = data.map(item => item.user_id)
   const { data: usersData, error } = await supabase.from('users').select('id, name').in('id', userIds);
   const usersMap = new Map(usersData.map(user => [user.id, user.name]));
 
   const updatedData = data.map(item => ({
+    id: item.id,
     name: usersMap.get(item.user_id),
+    experience: item.experience,
     topics: item.topics,
-    availability: item.availability
+    availability: item.availability,
+    countReviews: item.counselings.map(counseling => counseling.review)
   }));
 
-  res.json({ updatedData });
+  // res.json({ data: testCount.data});
+
+  res.json({ data: updatedData });
 })
 
 app.get('/psychologists/:id', async (req, res) => {
@@ -304,7 +375,7 @@ app.post('/history/counselings/:id', async (req, res) => {
   const data = await supabase.from('counselings').update({ review: review }).eq('id', counselingId)
   const addedReview = await supabase.from('counselings').select('*').eq('id', counselingId)
 
-  res.json({data: {review: addedReview.data[0].review}})
+  res.json({ data: { review: addedReview.data[0].review } })
 })
 
 app.get('/counselings/psychologist/:id', async (req, res) => {
