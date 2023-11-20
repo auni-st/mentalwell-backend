@@ -76,7 +76,7 @@ app.get('/accessResource', (req, res) => {
 
 
 app.post('/users', async (req, res) => {
-  const { name, email, password, password_confirm, phone_number, role = 'patient' } = req.body;
+  const { email, password, password_confirm, phone_number, role = 'patient' } = req.body;
 
   //email validation
   if (!emailRegex.test(email)) {
@@ -112,7 +112,7 @@ app.post('/users', async (req, res) => {
   }
 
   //insert to users table
-  const { data, e } = await supabase.from('users').upsert([{ name, email, password: hashedPassword, phone_number, role }], { onConflict: ['email'] });
+  const { data, e } = await supabase.from('users').upsert([{ email, password: hashedPassword, phone_number, role }], { onConflict: ['email'] });
 
   //insert to patients table if role == patient and insert to psychologists table if role == psychologist
   const getUserRole = await supabase.from('users').select('role').order('created_at', { ascending: false }).limit(1);
@@ -133,7 +133,6 @@ app.post('/users', async (req, res) => {
   const { error, status, statusText, count, ...cleanedData } = createdUser;
   const cleanedDataObject = cleanedData.data[0];
   const cleanedDataOnly = {
-    name: cleanedDataObject.name,
     email: cleanedDataObject.email,
     phone_number: cleanedDataObject.phone_number,
     created_at: cleanedDataObject.created_at
