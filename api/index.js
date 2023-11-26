@@ -5,10 +5,13 @@ const bodyParser = require('body-parser');
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcrypt');
 const jwt = require("jsonwebtoken");
+const multer = require('multer');
 
 const app = express();
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 const PORT = process.env.PORT || 3000;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -22,6 +25,12 @@ app.use(bodyParser.json());
 // routes
 app.get('/helloWorld', async (req, res) => {
   res.json({ message: 'HELLO WORLD!' })
+})
+
+app.get('/users/:id', async (req, res) => {
+  const { id } = req.params
+  const data = await supabase.from('users').select('*').eq('id', id).single()
+  res.json(data.data)
 })
 
 // app.get('/users', async (req, res) => {
@@ -159,12 +168,12 @@ app.get('/patient/:id', async (req, res) => {
     res.status(401).json({ message: 'profile patient can only be done by patient!' })
   }
 
-  const patientData = await supabase.from('patients').select('id, users (email, phone_number, birthdate, gender)').eq('user_id', currentUser.id).single();
+  const patientData = await supabase.from('patients').select('id, users (email, phone_number, birthdate, gender, profile_image)').eq('user_id', currentUser.id).single();
 
   res.json(patientData.data)
 })
 
-app.put('/patient/:id', async (req, res) => {
+app.put('/patient/:id', upload.single('profile_image'), async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
   if (!token) {
@@ -175,17 +184,77 @@ app.put('/patient/:id', async (req, res) => {
   const currentUser = jwt.verify(token, "secretkeyappearshere");
 
   if (currentUser.role !== "patient") {
-    res.status(401).json({ message: 'create counseling can only be done by patient!' })
+    res.status(401).json({ message: 'update patient profile can only be done by patient!' })
   }
 
   const { newPhone_number, newBirthdate, newGender } = req.body;
-  const editPatientData = await supabase.from('users').update({phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender}).eq('id', currentUser.id)
 
-  const data = await supabase.from('users').select('phone_number, birthdate, gender').eq('id', currentUser.id).single();
+  const allowedMimeTypes = ['image/jpeg']
+  //for profile_image
+  if (req.file) {
+    // Check if the MIME type is allowed
+    if (!allowedMimeTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({ message: 'Invalid file type. Only JPEG files are allowed.' });
+    }
+
+    const { data: image, error } = await supabase.storage.from('mentalwell-profileimage').upload(`profile_image/${currentUser.id}_${req.file.originalname}`, req.file.buffer, {
+      contentType: req.file.mimetype,
+    });
+
+    const { data: publicUrl } = await supabase.storage.from('mentalwell-profileimage').getPublicUrl(`profile_image/${currentUser.id}_${req.file.originalname}`)
+
+    const editPatientData = await supabase.from('users').update({ phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender, profile_image: publicUrl.publicUrl }).eq('id', currentUser.id)
+
+    const data = await supabase.from('users').select('phone_number, birthdate, gender, profile_image').eq('id', currentUser.id).single();
+
+    res.json(data.data);
+
+  }
+
+  const editPatientData = await supabase.from('users').update({ phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender }).eq('id', currentUser.id)
+
+  const data = await supabase.from('users').select('phone_number, birthdate, gender, profile_image').eq('id', currentUser.id).single();
+
   res.json(data.data);
 })
 
-app.put('/psychologist/:id', async (req, res) => {
+
+app.get('/psychologist/profile/:id', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  if (currentUser.role !== "psychologist") {
+    res.status(401).json({ message: 'profile psychologist can only be done by psychologist!' })
+  }
+
+  const psychologistData = await supabase.from('psychologists').select('id, bio, experience, users (name, email, phone_number, birthdate, gender, profile_image), psychologists_topics(topics(name))').eq('user_id', currentUser.id).single();
+
+  const cleanedResponse = {
+    id: psychologistData.data.id,
+    bio: psychologistData.data.bio,
+    experience: psychologistData.data.experience,
+    name: psychologistData.data.users.name,
+    email: psychologistData.data.users.email,
+    phone_number: psychologistData.data.users.phone_number,
+    birthdate: psychologistData.data.users.birthdate,
+    gender: psychologistData.data.users.gender,
+    profile_image: psychologistData.data.users.profile_image,
+    topics: psychologistData.data.psychologists_topics.data,
+    psychologists_topics: psychologistData.data.psychologists_topics.map(item => ({
+      topic_name: item.topics.name
+    }))
+  }
+  res.json(cleanedResponse)
+})
+
+
+app.put('/psychologist/:id', upload.single('profile_image'), async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
   if (!token) {
@@ -197,17 +266,98 @@ app.put('/psychologist/:id', async (req, res) => {
   const psychologistId = await supabase.from('psychologists').select('id').eq('user_id', currentUser.id).single();
 
   if (currentUser.role !== "psychologist") {
-    res.status(401).json({ message: 'create article can only be done by psychologist!' })
+    res.status(401).json({ message: 'edit psychologist profile can only be done by psychologist!' })
   }
 
-  const {newPhone_number, newBirthdate, newGender, newTopics, newBio} = req.body
+  // res.json(psychologistId.data.id)
 
-  const editPsychologistData1 = await supabase.from('users').update({phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender}).eq('id', currentUser.id)
-  const editPsychologistData2 = await supabase.from('psychologists').update({topics: newTopics, bio: newBio}).eq('user_id', currentUser.id)
+  const { newName, newPhone_number, newBirthdate, newGender, newBio, newExperience, newTopics } = req.body
 
-  const updatedData = await supabase.from('users').select('phone_number, birthdate, gender, psychologists (topics, bio)').eq('id', currentUser.id).single();
+  const allowedMimeTypes = ['image/jpeg']
+  //for profile_image
+  if (req.file) {
+    // Check if the MIME type is allowed
+    if (!allowedMimeTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({ message: 'Invalid file type. Only JPEG files are allowed.' });
+    }
 
-  res.json(updatedData.data);
+    const { data: image, error } = await supabase.storage.from('mentalwell-profileimage').upload(`profile_image/${currentUser.id}_${req.file.originalname}`, req.file.buffer, {
+      contentType: req.file.mimetype,
+    });
+
+    const { data: publicUrl } = await supabase.storage.from('mentalwell-profileimage').getPublicUrl(`profile_image/${currentUser.id}_${req.file.originalname}`)
+
+    const editPsychologistData1 = await supabase.from('users').update({ name: newName, phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender, profile_image: publicUrl.publicUrl }).eq('id', currentUser.id)
+    const editPsychologistData2 = await supabase.from('psychologists').update({ bio: newBio, experience: newExperience }).eq('user_id', currentUser.id)
+
+    if (newTopics) {
+      const deletePreviousTopics = await supabase.from('psychologists_topics').delete().eq('psychologist_id', psychologistId.data.id)
+      const editPsychologistData3 = await supabase.from('psychologists_topics').upsert(newTopics.map(topic_id => ({
+        psychologist_id: psychologistId.data.id,
+        topic_id
+      })))
+    }
+
+    const updatedData = await supabase.from('users').select('id, name, phone_number, birthdate, gender, profile_image, psychologists (bio, experience, psychologists_topics (psychologist_id, topic_id, topics (id, name)))').eq('id', currentUser.id).single();
+
+    const cleanedResponse = {
+      id: updatedData.data.id,
+      name: updatedData.data.name,
+      phone_number: updatedData.data.phone_number,
+      birthdate: updatedData.data.birthdate,
+      gender: updatedData.data.gender,
+      profile_image: updatedData.data.profile_image,
+      psychologist: updatedData.data.psychologists.map(item => ({
+        bio: item.bio,
+        experience: item.experience,
+        topics: item.psychologists_topics.filter((topic, index, self) => {
+          const isUnique = index === self.findIndex(t => t.topics.id === topic.topics.id && t.topics.name === topic.topics.name);
+          return isUnique;
+        }).map(topic => ({
+          topic_id: topic.topics.id,
+          topic_name: topic.topics.name
+        }))
+      }))
+
+    }
+    res.json(cleanedResponse);
+
+  }
+
+  const editPsychologistData1 = await supabase.from('users').update({ name: newName, phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender }).eq('id', currentUser.id)
+  const editPsychologistData2 = await supabase.from('psychologists').update({ bio: newBio, experience: newExperience }).eq('user_id', currentUser.id)
+
+  if (newTopics) {
+    const deletePreviousTopics = await supabase.from('psychologists_topics').delete().eq('psychologist_id', psychologistId.data.id)
+    const editPsychologistData3 = await supabase.from('psychologists_topics').upsert(newTopics.map(topic_id => ({
+      psychologist_id: psychologistId.data.id,
+      topic_id
+    })))
+  }
+
+  const updatedData = await supabase.from('users').select('id, name, phone_number, birthdate, gender, profile_image, psychologists (bio, experience, psychologists_topics (psychologist_id, topic_id, topics (id, name)))').eq('id', currentUser.id).single();
+
+  const cleanedResponse = {
+    id: updatedData.data.id,
+    name: updatedData.data.name,
+    phone_number: updatedData.data.phone_number,
+    birthdate: updatedData.data.birthdate,
+    gender: updatedData.data.gender,
+    profile_image: updatedData.data.profile_image,
+    psychologist: updatedData.data.psychologists.map(item => ({
+      bio: item.bio,
+      experience: item.experience,
+      topics: item.psychologists_topics.filter((topic, index, self) => {
+        const isUnique = index === self.findIndex(t => t.topics.id === topic.topics.id && t.topics.name === topic.topics.name);
+        return isUnique;
+      }).map(topic => ({
+        topic_id: topic.topics.id,
+        topic_name: topic.topics.name
+      }))
+    }))
+
+  }
+  res.json(cleanedResponse);
 })
 
 app.post('/articles', async (req, res) => {
@@ -234,7 +384,15 @@ app.post('/articles', async (req, res) => {
 })
 
 app.get('/articles', async (req, res) => {
-  const { data, error } = await supabase.from('articles').select('id, title, content, created_at');
+  const { title } = req.query;
+
+  if (!title) {
+    const { data, error } = await supabase.from('articles').select('id, title, content, created_at');
+    return res.json(data);
+  }
+
+  // const { data, error } = await supabase.from('articles').select('id, title, content, created_at').ilike('title', title);
+  const { data, error } = await supabase.from('articles').select('id, title, content, created_at').ilike('title', `%${title}%`);
   res.json(data);
 })
 
@@ -258,50 +416,118 @@ app.get('/articles/:id', async (req, res) => {
 
 })
 
-app.get('/psychologists', async (req, res) => {
-  const { data, e } = await supabase.from('psychologists').select('id, user_id, experience, topics, availability, counselings (review:count)').order('id', { ascending: true });
+app.get('/psychologists_index', async (req, res) => {
+  const { data, e } = await supabase.from('psychologists').select('id, users(name, profile_image)')
 
-  const userIds = data.map(item => item.user_id)
-  const { data: usersData, error } = await supabase.from('users').select('id, name').in('id', userIds);
-  const usersMap = new Map(usersData.map(user => [user.id, user.name]));
-
-  const updatedData = data.map(item => ({
-    id: item.id,
-    name: usersMap.get(item.user_id),
-    experience: item.experience,
-    topics: item.topics,
-    availability: item.availability,
-    countReviews: item.counselings.map(counseling => counseling.review)
+  const names = data.map(item => ({
+    profile_image: item.users?.profile_image,
+    name: item.users?.name
   }));
+  res.json({ data: names });
+})
 
-  // res.json({ data: testCount.data});
+app.get('/psychologists', async (req, res) => {
+  const { topics, name } = req.query;
 
-  res.json({ data: updatedData });
+  if (!topics && !name) {
+    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name), counselings (review)')
+
+    const psychologistsWithReviewCount = joinManytoMany.data.map(psychologist => {
+      const reviewCount = psychologist.counselings.filter(counseling => counseling.review !== null).length;
+      return {
+        id: psychologist.id,
+        bio: psychologist.bio,
+        experience: psychologist.experience,
+        availability: psychologist.availability,
+        name: psychologist.users.name,
+        counselings: { review: { count: reviewCount } }
+      };
+    });
+
+    res.json(psychologistsWithReviewCount)
+  }
+
+  if (name) {
+    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name), counselings (review)').ilike('users.name', `%${name}%`).not('users', 'is', null)
+
+    const psychologistsWithReviewCount = joinManytoMany.data.map(psychologist => {
+      const reviewCount = psychologist.counselings.filter(counseling => counseling.review !== null).length;
+      return {
+        id: psychologist.id,
+        bio: psychologist.bio,
+        experience: psychologist.experience,
+        availability: psychologist.availability,
+        name: psychologist.users.name,
+        counselings: { review: { count: reviewCount } }
+      };
+    });
+
+    res.json(psychologistsWithReviewCount)
+
+  }
+
+  if (topics) {
+    const arrayTopics = [topics]
+    const joinedIds = `(${arrayTopics.join(',')})`;
+    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name), counselings (review), psychologists_topics(topics (id, name))').filter('psychologists_topics.topics.id', 'in', joinedIds).not('psychologists_topics.topics', 'is', null).order('id', { ascending: true })
+
+    const psychologistsWithReviewCount = joinManytoMany.data.filter(item => item.psychologists_topics.length > 0).map(psychologist => {
+      const reviewCount = psychologist.counselings.filter(counseling => counseling.review !== null).length;
+      return {
+        id: psychologist.id,
+        bio: psychologist.bio,
+        experience: psychologist.experience,
+        availability: psychologist.availability,
+        name: psychologist.users.name,
+        counselings: { review: { count: reviewCount } }
+      };
+    });
+
+    res.json(psychologistsWithReviewCount)
+  }
+
 })
 
 app.get('/psychologists/:id', async (req, res) => {
   const psychologistId = req.params.id;
-  const { data, e } = await supabase.from('psychologists').select('user_id, bio, topics, availability, experience').eq('id', psychologistId);
-  const userId = data.map(item => item.user_id)
-  const { data: usersData, error } = await supabase.from('users').select('id, name').in('id', userId);
-  const usersMap = new Map(usersData.map(user => [user.id, user.name]));
 
-  const reviews = await supabase.from('psychologists').select('id, counselings (review, patients (users (name)))').eq('id', psychologistId)
+  const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, users(name), psychologists_topics (id, psychologist_id, topic_id, topics (id, name)), counselings (review, patients(users(name)))').eq('id', psychologistId).single()
 
-  const patientsReview = reviews.data[0].counselings.map(counseling => ({
-    patient_name: counseling.patients?.users.name,
-    review: counseling.review
-  }))
+  const cleanedResponse = {
+    id: joinManytoMany.data.id,
+    name: joinManytoMany.data.users.name,
+    bio: joinManytoMany.data.bio,
+    experience: joinManytoMany.data.experience,
+    psychologist_topics: joinManytoMany.data.psychologists_topics.map(item => ({
+      topic_id: item.topics.id,
+      topic_name: item.topics.name
+    })),
+    counselings: joinManytoMany.data.counselings.filter(item => item.review !== null).map(item => ({
+      patients: item.patients.users.name,
+      review: item.review,
+    }))
+  }
 
-  const updatedData = data.map(item => ({
-    name: usersMap.get(item.user_id),
-    bio: item.bio,
-    topics: item.topics,
-    availability: item.availability,
-    experience: item.experience
-  }));
+  res.json(cleanedResponse)
 
-  res.status(200).json({ data: { updatedData, patientsReview } })
+})
+
+app.get('/couselings/patient/:id', async (req,res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  if (currentUser.role !== "patient") {
+    res.status(401).json({ message: 'create counseling can only be done by patient!' })
+  }
+
+  const getData = await supabase.from('patients').select('id, users (phone_number, birthdate, gender)').eq('user_id', currentUser.id)
+  res.json(getData.data[0].users)
 })
 
 app.post('/counselings/psychologists/:id', async (req, res) => {
@@ -320,7 +546,11 @@ app.post('/counselings/psychologists/:id', async (req, res) => {
 
   const currentPatient = await supabase.from('patients').select('id').eq('user_id', currentUser.id)
 
-  const { full_name, nickname, birthdate, gender, phone_number, occupation, schedule_date, schedule_time, type, problem_description, hope_after } = req.body
+  const { full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after } = req.body
+  const getData = await supabase.from('patients').select('id, users (phone_number, birthdate, gender)').eq('user_id', currentUser.id)
+  const phone_number = getData.data[0].users.phone_number;
+  const birthdate = getData.data[0].users.birthdate;
+  const gender = getData.data[0].users.gender; 
   const { data, e } = await supabase.from('counselings').upsert([{ patient_id: currentPatient.data[0].id, psychologist_id: parseInt(req.params.id), full_name, nickname, birthdate, gender, phone_number, occupation, schedule_date, schedule_time, type, problem_description, hope_after }]);
   const createdCounseling = await supabase.from('counselings').select('full_name, nickname, birthdate, gender, phone_number, occupation, schedule_date, schedule_time, type, problem_description, hope_after').order('created_at', { ascending: false }).limit(1);
 
@@ -354,9 +584,10 @@ app.get('/history', async (req, res) => {
 
   const history = await supabase.from('counselings').select('*').eq('patient_id', currentPatientData.id);
 
-  const { data, error } = await supabase.from('counselings').select(`schedule_date, schedule_time, type, status, psychologists (users(name))`).eq('patient_id', currentPatientData.id)
+  const { data, error } = await supabase.from('counselings').select(`id, schedule_date, schedule_time, type, status, psychologists (users(name))`).eq('patient_id', currentPatientData.id).order('status', { ascending: true })
 
   const counselingData = data.map(counseling => ({
+    id: counseling.id,
     psychologist_name: counseling.psychologists?.users?.name,
     schedule_date: counseling.schedule_date,
     schedule_time: counseling.schedule_time,
@@ -393,9 +624,10 @@ app.get('/counselings/psychologist/:id', async (req, res) => {
   }
 
   const psychologistId = req.params.id;
-  const data = await supabase.from('counselings').select('patients (users (name)), schedule_date, schedule_time, type, status').eq('psychologist_id', psychologistId)
+  const data = await supabase.from('counselings').select('id, patients (users (name)), schedule_date, schedule_time, type, status').eq('psychologist_id', psychologistId).order('status', { ascending: true })
 
   const counselingData = data.data.map(counseling => ({
+    id: counseling.id,
     patient_name: counseling.patients?.users?.name,
     schedule_date: counseling.schedule_date,
     schedule_time: counseling.schedule_time,
