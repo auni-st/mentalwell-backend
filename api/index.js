@@ -154,6 +154,10 @@ app.post('/users', async (req, res) => {
   res.status(201).json({ message: 'registration success', cleanedDataOnly });
 })
 
+//forgot password
+
+
+
 app.get('/patient/:id', async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
@@ -360,39 +364,48 @@ app.put('/psychologist/:id', upload.single('profile_image'), async (req, res) =>
   res.json(cleanedResponse);
 })
 
-app.post('/articles', async (req, res) => {
-  const token = req.headers.authorization.split(' ')[1];
-  //Authorization: 'Bearer TOKEN'
-  if (!token) {
-    res.status(200).json({ message: 'error! token was not provided' })
-  }
-
-  //Decode token
-  const currentUser = jwt.verify(token, "secretkeyappearshere");
-  const psychologistId = await supabase.from('psychologists').select('id').eq('user_id', currentUser.id).single();
-
-  if (currentUser.role !== "psychologist") {
-    res.status(401).json({ message: 'create article can only be done by psychologist!' })
-  }
-
+app.post('/articles', upload.single('image'), async (req, res) => {
   const { title, content, references } = req.body
-  const { data, e } = await supabase.from('articles').upsert([{ psychologist_id: psychologistId.data.id, title, content, references }]);
 
-  const createdArticle = await supabase.from('articles').select('psychologist_id, title, content, references').order('created_at', { ascending: false }).limit(1);
-  res.status(201).json({ message: 'article create success', data: { author: currentUser.name, title: createdArticle.data[0].title, content: createdArticle.data[0].content, references: createdArticle.data[0].references } })
+  const allowedMimeTypes = ['image/jpeg']
+  //for profile_image
+  if (req.file) {
+    // Check if the MIME type is allowed
+    if (!allowedMimeTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({ message: 'Invalid file type. Only JPEG files are allowed.' });
+    }
 
+    const { data: image, error } = await supabase.storage.from('mentalwell-profileimage').upload(`image/${req.file.originalname}`, req.file.buffer, {
+      contentType: req.file.mimetype,
+    });
+
+    const { data: publicUrl } = await supabase.storage.from('mentalwell-profileimage').getPublicUrl(`image/${req.file.originalname}`)
+
+    const { data, e } = await supabase.from('articles').upsert([{ title, content, references, image: publicUrl.publicUrl }]);
+
+    const createdArticle = await supabase.from('articles').select('id, image, title, content, references').order('created_at', { ascending: false }).limit(1);
+
+    res.status(201).json({ message: 'article create success', data: { image: createdArticle.data[0].image, title: createdArticle.data[0].title, content: createdArticle.data[0].content, references: createdArticle.data[0].references } })
+  }
+
+  if (!req.file) {
+    const { data, e } = await supabase.from('articles').upsert([{ title, content, references }]);
+
+    const createdArticle = await supabase.from('articles').select('title, image, content, references').order('created_at', { ascending: false }).limit(1);
+    res.status(201).json({ message: 'article create success', data: { image: createdArticle.data[0].image, title: createdArticle.data[0].title, content: createdArticle.data[0].content, references: createdArticle.data[0].references } })
+  }
 })
 
 app.get('/articles', async (req, res) => {
   const { title } = req.query;
 
   if (!title) {
-    const { data, error } = await supabase.from('articles').select('id, title, content, created_at');
+    const { data, error } = await supabase.from('articles').select('id, image, title, content, created_at');
     return res.json(data);
   }
 
   // const { data, error } = await supabase.from('articles').select('id, title, content, created_at').ilike('title', title);
-  const { data, error } = await supabase.from('articles').select('id, title, content, created_at').ilike('title', `%${title}%`);
+  const { data, error } = await supabase.from('articles').select('id, image, title, content, created_at').ilike('title', `%${title}%`);
   res.json(data);
 })
 
@@ -512,7 +525,7 @@ app.get('/psychologists/:id', async (req, res) => {
 
 })
 
-app.get('/couselings/patient/:id', async (req,res) => {
+app.get('/couselings/patient/:id', async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
   if (!token) {
@@ -549,19 +562,50 @@ app.post('/counselings/psychologists/:id', async (req, res) => {
   const { full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after } = req.body
   const getData = await supabase.from('patients').select('id, users (phone_number, birthdate, gender)').eq('user_id', currentUser.id)
   const phone_number = getData.data[0].users.phone_number;
+  // res.json(phone_number)
   const birthdate = getData.data[0].users.birthdate;
-  const gender = getData.data[0].users.gender; 
-  const { data, e } = await supabase.from('counselings').upsert([{ patient_id: currentPatient.data[0].id, psychologist_id: parseInt(req.params.id), full_name, nickname, birthdate, gender, phone_number, occupation, schedule_date, schedule_time, type, problem_description, hope_after }]);
-  const createdCounseling = await supabase.from('counselings').select('full_name, nickname, birthdate, gender, phone_number, occupation, schedule_date, schedule_time, type, problem_description, hope_after').order('created_at', { ascending: false }).limit(1);
+  const gender = getData.data[0].users.gender;
+  const { data, e } = await supabase.from('counselings').upsert([{ patient_id: currentPatient.data[0].id, psychologist_id: parseInt(req.params.id), full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after }]);
+  const createdCounseling = await supabase.from('counselings').select('full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after').order('created_at', { ascending: false }).limit(1);
 
-  res.status(201).json({ data: createdCounseling.data[0] })
+  const cleanedResponse = {
+    full_name: createdCounseling.data[0]?.full_name,
+    birthdate,
+    gender,
+    phone_number,
+    nickname: createdCounseling.data[0]?.nickname,
+    occupation: createdCounseling.data[0]?.occupation,
+    schedule_date: createdCounseling.data[0]?.schedule_date,
+    schedule_time: createdCounseling.data[0]?.schedule_time,
+    type: createdCounseling.data[0]?.type,
+    problem_description: createdCounseling.data[0]?.problem_description,
+    hope_after: createdCounseling.data[0]?.hope_after,
+  }
+
+  res.status(201).json({ data: cleanedResponse })
 })
 
 app.get('/counselings/:id', async (req, res) => {
   const counselingId = parseInt(req.params.id);
-  const createdCounseling = await supabase.from('counselings').select('full_name, nickname, phone_number, schedule_date, schedule_time, type').eq('id', counselingId).single();
+  // res.json(counselingId)
+  //get phone_number
+  const getPatientData = await supabase.from('counselings').select('id, patient_id, patients (users (phone_number))').eq('id', counselingId).single()
 
-  res.json(createdCounseling.data)
+  // const getData = await supabase.from('patients').select('id, users (phone_number)').eq('user_id', getPatientData.data.patient_id)
+  // res.json(getData);
+  // const phone_number = getData.data[0].users.phone_number;
+
+  const createdCounseling = await supabase.from('counselings').select('full_name, nickname, schedule_date, schedule_time, type').eq('id', counselingId).single();
+
+  cleanedResponse = {
+    full_name: createdCounseling.data.full_name,
+    nickname: createdCounseling.data.nickname,
+    phone_number: getPatientData.data.patients.users.phone_number,
+    schedule_date: createdCounseling.data.schedule_date,
+    schedule_time: createdCounseling.data.schedule_time,
+    type: createdCounseling.data.type
+  }
+  res.json(cleanedResponse)
 })
 
 app.get('/history', async (req, res) => {
@@ -655,10 +699,15 @@ app.get('/dashboard/counseling/:id', async (req, res) => {
 
   const counselingId = req.params.id;
 
-  const data = await supabase.from('counselings').select('patients (users(name)), schedule_date, schedule_time, type, problem_description, hope_after, status').eq('id', counselingId)
+  const data = await supabase.from('counselings').select('patients (users(birthdate, gender, phone_number)), full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after, status').eq('id', counselingId)
 
   const counselingData = data.data.map(counseling => ({
-    patient_name: counseling.patients?.users?.name,
+    full_name: counseling.full_name,
+    nickname: counseling.nickname,
+    birthdate: counseling.patients.users.birthdate,
+    gender: counseling.patients.users.gender,
+    phone_number: counseling.patients.users.phone_number,
+    occupation: counseling.occupation,
     schedule_date: counseling.schedule_date,
     schedule_time: counseling.schedule_time,
     type: counseling.type,
