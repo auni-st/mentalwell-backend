@@ -8,7 +8,7 @@ jobs:
       - checkout
       # - run:
       #     name: Run Tests
-      #     command: sudo npm test #change test in package.json 
+      #     command: sudo npm test #change test in package.json
       - run:
           name: Hello World!
           command: echo "Hello, World!"
@@ -23,13 +23,21 @@ jobs:
           command: sudo npm install --global vercel@latest
       - run:
           name: Deploy
-          command: vercel deploy --prod --token=$VERCEL_TOKEN 
+          command: vercel deploy --prod --token=$VERCEL_TOKEN
 
 workflows:
   version: 2
   build_test_deploy:
     jobs:
-      - test
+      - test:
+          filters:
+            branches:
+              only:
+                - main
       - deploy:
           requires:
             - test
+          filters:
+            branches:
+              only:
+                - main
