@@ -668,19 +668,48 @@ app.get('/counselings/psychologist/:id', async (req, res) => {
   }
 
   const psychologistId = req.params.id;
-  const data = await supabase.from('counselings').select('id, patients (users (name)), schedule_date, schedule_time, type, status').eq('psychologist_id', psychologistId).order('status', { ascending: true })
+  const psychologistAvailability = await supabase.from('psychologists').select('availability').eq('id', psychologistId).single();
 
-  const counselingData = data.data.map(counseling => ({
-    id: counseling.id,
-    patient_name: counseling.patients?.users?.name,
-    schedule_date: counseling.schedule_date,
-    schedule_time: counseling.schedule_time,
-    type: counseling.type,
-    status: counseling.status,
-  }));
+  const counselingData = await supabase.from('counselings').select('id, patients (users (name)), schedule_date, schedule_time, type, status').eq('psychologist_id', psychologistId).order('status', { ascending: true })
+  const counselingList = counselingData.data
 
+  const cleanedResponse = {
+    psychologistAvailability: psychologistAvailability.data.availability,
+    counselingList: counselingList.map(counseling => ({
+      id: counseling.id,
+      patientName: counseling.patients.users.name,
+      scheduleDate: counseling.schedule_date,
+      scheduleTime: counseling.schedule_time,
+      type: counseling.type,
+      status: counseling.status,
+    })),
+  };
 
-  res.json(counselingData)
+  res.json(cleanedResponse)
+})
+
+app.put('/counselings/psychologist/:id', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  if (currentUser.role !== "psychologist") {
+    res.status(401).json({ message: 'edit psychologist availability can only be done by psychologist!' })
+  }
+
+  const psychologistId = req.params.id;
+  const { newAvailability } = req.body;
+
+  const { data, error } = await supabase.from('psychologists').update({ availability: newAvailability }).eq('id', psychologistId);
+
+  const viewData = await supabase.from('psychologists').select('availability').eq('id', psychologistId).single();
+  res.json(viewData.data)
+
 })
 
 app.get('/dashboard/counseling/:id', async (req, res) => {
