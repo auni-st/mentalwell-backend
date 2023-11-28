@@ -27,6 +27,10 @@ app.get('/helloWorld', async (req, res) => {
   res.json({ message: 'HELLO WORLD!' })
 })
 
+app.get('/helloExpress', async (req, res) => {
+  res.json({ message: 'HELLO WORLD!' })
+})
+
 app.get('/users/:id', async (req, res) => {
   const { id } = req.params
   const data = await supabase.from('users').select('*').eq('id', id).single()
