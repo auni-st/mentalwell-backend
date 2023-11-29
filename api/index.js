@@ -464,6 +464,26 @@ app.get('/psychologists', async (req, res) => {
     res.json(psychologistsWithReviewCount)
   }
 
+  if (name && topics) {
+    // res.json({message: 'works!'})
+    const arrayTopics = [topics]
+    const joinedIds = `(${arrayTopics.join(',')})`;
+
+    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name), counselings (review), psychologists_topics (topics (id, name))').ilike('users.name', `%${name}%`).not('users', 'is', null).filter('psychologists_topics.topics.id', 'in', joinedIds).not('psychologists_topics.topics', 'is', null).order('id', { ascending: true })
+    const psychologistsWithReviewCount = joinManytoMany.data.map(psychologist => {
+      const reviewCount = psychologist.counselings.filter(counseling => counseling.review !== null).length;
+      return {
+        id: psychologist.id,
+        bio: psychologist.bio,
+        experience: psychologist.experience,
+        availability: psychologist.availability,
+        name: psychologist.users.name,
+        counselings: { review: { count: reviewCount } },
+      };
+    });
+    res.json(psychologistsWithReviewCount)
+  }
+
   if (name) {
     const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name), counselings (review)').ilike('users.name', `%${name}%`).not('users', 'is', null)
 
