@@ -16,6 +16,7 @@ jobs:
   deploy:
     docker:
       - image: circleci/node:16
+    resource_class: medium+
     steps:
       - checkout
       - run:
