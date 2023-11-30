@@ -1,4 +1,4 @@
 .vercel
 vercel_credentials.txt
-.env
 node_modules/
+.env
