@@ -239,6 +239,7 @@ app.put('/reset-password/:token', async (req, res) => {
 
   res.json({ message: 'Password reset successful!' })
 })
+
 app.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
 
