@@ -205,8 +205,9 @@ app.post('/forgot-password', async (req, res) => {
         console.log('Email sent:', info.response);
         res.status(200).json({ message: 'Password reset email sent successfully' });
       }
-    })
-    res.json({ message: 'Password reset email has been sent!' })
+    });
+  } else {
+    res.status(404).json({ message: 'User not found' });
   }
 })
 
