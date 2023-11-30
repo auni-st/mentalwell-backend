@@ -6,6 +6,20 @@ const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcrypt');
 const jwt = require("jsonwebtoken");
 const multer = require('multer');
+const { v4: uuidv4 } = require('uuid');
+const nodemailer = require('nodemailer');
+const { google } = require('googleapis');
+
+// const { OAuth2Client } = require('google-auth-library');
+// const oAuth2Client = new OAuth2Client(credentials.clientId, credentials.clientSecret, credentials.redirectUri);
+// oAuth2Client.setCredentials({ refresh_token: credentials.refreshToken });
+
+// const credentials = {
+//   clientId: '309582175036-urr8mfn07p1vggcv048b7p6j35ltp7q5.apps.googleusercontent.com',
+//   clientSecret: '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',
+//   redirectUri: 'http://localhost',
+//   refreshToken: 'https://oauth2.googleapis.com/token'
+// }
 
 const app = express();
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -87,7 +101,6 @@ app.get('/accessResource', (req, res) => {
   res.status(200).json({ message: 'success', data: { id: decodedToken.id, email: decodedToken.email, name: decodedToken.name, role: decodedToken.role } });
 })
 
-
 app.post('/users', async (req, res) => {
   const { email, password, password_confirm, phone_number, role = 'patient' } = req.body;
 
@@ -159,8 +172,85 @@ app.post('/users', async (req, res) => {
 })
 
 //forgot password
+app.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
 
+  const { data: user } = await supabase.from('users').select('id, email').eq('email', email).single();
 
+  if (user) {
+    const resetToken = uuidv4();
+
+    const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000); //24 hour
+    const insert = await supabase.from('password_reset_tokens').upsert([
+      {
+        user_id: user.id,
+        token: resetToken,
+        expires_at: expiresAt.toISOString(),
+      },
+    ]);
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_APP_PASSWORD
+      }
+    });
+
+    const mailOptions = {
+      from: 'mentalwell.app@gmail.com',
+      to: email,
+      subject: 'Ubah Sandi',
+      // text: `Klik link berikut untuk mengubah password anda: https://mentalwell-backend.vercel.app/reset-password?token=${resetToken}`
+      text: `Klik link berikut untuk mengubah password anda: https://mentalwell.vercel.app/ubah-sandi?token=${resetToken}`
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Email error:', error);
+        res.status(500).json({ message: 'Error sending email' });
+      } else {
+        console.log('Email sent:', info.response);
+        res.status(200).json({ message: 'Password reset email sent successfully' });
+      }
+    })
+    res.json({ message: 'Password reset email has been sent!' })
+  }
+})
+
+app.put('/reset-password/:token', async (req, res) => {
+  const { token } = req.params;
+  const { newPassword, newPasswordConfirmation } = req.body;
+
+  if (newPassword !== newPasswordConfirmation) {
+    return res.status(400).json({ message: 'New password and confirmation do not match' });
+  }
+
+  const { data: resetTokenData, error: tokenError } = await supabase.from('password_reset_tokens').select('user_id, expires_at').eq('token', token).single()
+
+  if (tokenError) {
+    res.json({ message: 'Error fetching reset token' })
+  }
+
+  if (!resetTokenData) {
+    res.json({ message: 'Reset token has expired' })
+  }
+
+  const { user_id, expires_at } = resetTokenData;
+
+  if (new Date(expires_at) < new Date()) {
+    return res.status(400).json({ message: 'Reset token has expired' });
+  }
+
+  const saltRounds = 10; // You can adjust this based on your security requirements
+  const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+  const updatePassword = await supabase.from('users').update({ password: hashedPassword }).eq('id', user_id)
+
+  await supabase.from('password_reset_tokens').delete().eq('token', token);
+
+  res.json({ message: 'Password reset successful!' })
+})
 
 app.get('/patient/:id', async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
