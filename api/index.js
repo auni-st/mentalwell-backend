@@ -8,18 +8,6 @@ const jwt = require("jsonwebtoken");
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
-const { google } = require('googleapis');
-
-// const { OAuth2Client } = require('google-auth-library');
-// const oAuth2Client = new OAuth2Client(credentials.clientId, credentials.clientSecret, credentials.redirectUri);
-// oAuth2Client.setCredentials({ refresh_token: credentials.refreshToken });
-
-// const credentials = {
-//   clientId: '309582175036-urr8mfn07p1vggcv048b7p6j35ltp7q5.apps.googleusercontent.com',
-//   clientSecret: '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',
-//   redirectUri: 'http://localhost',
-//   refreshToken: 'https://oauth2.googleapis.com/token'
-// }
 
 const app = express();
 const supabaseUrl = process.env.SUPABASE_URL;
