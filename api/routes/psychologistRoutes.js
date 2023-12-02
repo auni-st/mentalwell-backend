@@ -160,7 +160,7 @@ router.get('/psychologists', async (req, res) => {
   const { topics, name } = req.query;
 
   if (!topics && !name) {
-    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name), counselings (review)')
+    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name, profile_image), counselings (review)')
 
     const psychologistsWithReviewCount = joinManytoMany.data.map(psychologist => {
       const reviewCount = psychologist.counselings.filter(counseling => counseling.review !== null).length;
@@ -170,6 +170,7 @@ router.get('/psychologists', async (req, res) => {
         experience: psychologist.experience,
         availability: psychologist.availability,
         name: psychologist.users.name,
+        profile_image: psychologist.users.profile_image,
         counselings: { review: { count: reviewCount } }
       };
     });
@@ -180,7 +181,7 @@ router.get('/psychologists', async (req, res) => {
     const arrayTopics = [topics]
     const joinedIds = `(${arrayTopics.join(',')})`;
 
-    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name), counselings (review), psychologists_topics (topics (id, name))').ilike('users.name', `%${name}%`).not('users', 'is', null).filter('psychologists_topics.topics.id', 'in', joinedIds).not('psychologists_topics.topics', 'is', null).order('id', { ascending: true })
+    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name, profile_image), counselings (review), psychologists_topics (topics (id, name))').ilike('users.name', `%${name}%`).not('users', 'is', null).filter('psychologists_topics.topics.id', 'in', joinedIds).not('psychologists_topics.topics', 'is', null).order('id', { ascending: true })
     const psychologistsWithReviewCount = joinManytoMany.data.map(psychologist => {
       const reviewCount = psychologist.counselings.filter(counseling => counseling.review !== null).length;
       return {
@@ -189,12 +190,13 @@ router.get('/psychologists', async (req, res) => {
         experience: psychologist.experience,
         availability: psychologist.availability,
         name: psychologist.users.name,
+        profile_image: psychologist.users.profile_image,
         counselings: { review: { count: reviewCount } },
       };
     });
     res.json(psychologistsWithReviewCount)
   } else if (name) {
-    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name), counselings (review)').ilike('users.name', `%${name}%`).not('users', 'is', null)
+    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name, profile_image), counselings (review)').ilike('users.name', `%${name}%`).not('users', 'is', null)
 
     const psychologistsWithReviewCount = joinManytoMany.data.map(psychologist => {
       const reviewCount = psychologist.counselings.filter(counseling => counseling.review !== null).length;
@@ -204,6 +206,7 @@ router.get('/psychologists', async (req, res) => {
         experience: psychologist.experience,
         availability: psychologist.availability,
         name: psychologist.users.name,
+        profile_image: psychologist.users.profile_image,
         counselings: { review: { count: reviewCount } }
       };
     });
@@ -212,7 +215,7 @@ router.get('/psychologists', async (req, res) => {
   } else if (topics) {
     const arrayTopics = [topics]
     const joinedIds = `(${arrayTopics.join(',')})`;
-    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name), counselings (review), psychologists_topics(topics (id, name))').filter('psychologists_topics.topics.id', 'in', joinedIds).not('psychologists_topics.topics', 'is', null).order('id', { ascending: true })
+    const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, availability, users (name, profile_image), counselings (review), psychologists_topics(topics (id, name))').filter('psychologists_topics.topics.id', 'in', joinedIds).not('psychologists_topics.topics', 'is', null).order('id', { ascending: true })
 
     const psychologistsWithReviewCount = joinManytoMany.data.filter(item => item.psychologists_topics.length > 0).map(psychologist => {
       const reviewCount = psychologist.counselings.filter(counseling => counseling.review !== null).length;
@@ -222,6 +225,7 @@ router.get('/psychologists', async (req, res) => {
         experience: psychologist.experience,
         availability: psychologist.availability,
         name: psychologist.users.name,
+        profile_image: psychologist.users.profile_image,
         counselings: { review: { count: reviewCount } }
       };
     });
