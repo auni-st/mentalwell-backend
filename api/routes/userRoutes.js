@@ -62,6 +62,7 @@ router.post('/users', async (req, res) => {
   const { error, status, statusText, count, ...cleanedData } = createdUser;
   const cleanedDataObject = cleanedData.data[0];
   const cleanedDataOnly = {
+    id: cleanedDataObject.id,
     email: cleanedDataObject.email,
     phone_number: cleanedDataObject.phone_number,
     created_at: cleanedDataObject.created_at

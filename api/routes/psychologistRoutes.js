@@ -150,6 +150,7 @@ router.get('/psychologists_index', async (req, res) => {
   const { data, e } = await supabase.from('psychologists').select('id, users(name, profile_image)')
 
   const names = data.map(item => ({
+    id: item.id,
     profile_image: item.users?.profile_image,
     name: item.users?.name
   }));
@@ -238,7 +239,7 @@ router.get('/psychologists', async (req, res) => {
 router.get('/psychologists/:id', async (req, res) => {
   const psychologistId = req.params.id;
 
-  const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, users(name), psychologists_topics (id, psychologist_id, topic_id, topics (id, name)), counselings (review, patients(users(name)))').eq('id', psychologistId).single()
+  const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, users(name), psychologists_topics (id, psychologist_id, topic_id, topics (id, name)), counselings (id, review, patients(users(name)))').eq('id', psychologistId).single()
 
   const cleanedResponse = {
     id: joinManytoMany.data.id,
@@ -250,6 +251,7 @@ router.get('/psychologists/:id', async (req, res) => {
       topic_name: item.topics.name
     })),
     counselings: joinManytoMany.data.counselings.filter(item => item.review !== null).map(item => ({
+      id: item.id,
       patients: item.patients.users.name,
       review: item.review,
     }))
@@ -332,9 +334,10 @@ router.get('/dashboard/counseling/:id', async (req, res) => {
 
   const counselingId = req.params.id;
 
-  const data = await supabase.from('counselings').select('patients (users(birthdate, gender, phone_number)), full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after, status').eq('id', counselingId)
+  const data = await supabase.from('counselings').select('id, patients (users(birthdate, gender, phone_number)), full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after, status').eq('id', counselingId)
 
   const counselingData = data.data.map(counseling => ({
+    id: counseling.id,
     full_name: counseling.full_name,
     nickname: counseling.nickname,
     birthdate: counseling.patients.users.birthdate,

@@ -86,7 +86,7 @@ router.get('/counselings/patient/:id', async (req, res) => {
   }
 
   const getData = await supabase.from('patients').select('id, users (phone_number, birthdate, gender)').eq('user_id', currentUser.id)
-  res.json(getData.data[0].users)
+  res.json(getData.data[0])
 })
 
 router.post('/counselings/psychologists/:id', async (req, res) => {
@@ -112,9 +112,10 @@ router.post('/counselings/psychologists/:id', async (req, res) => {
   const birthdate = getData.data[0].users.birthdate;
   const gender = getData.data[0].users.gender;
   const { data, e } = await supabase.from('counselings').upsert([{ patient_id: currentPatient.data[0].id, psychologist_id: parseInt(req.params.id), full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after }]);
-  const createdCounseling = await supabase.from('counselings').select('full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after').order('created_at', { ascending: false }).limit(1);
+  const createdCounseling = await supabase.from('counselings').select('id, full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after').order('created_at', { ascending: false }).limit(1);
 
   const cleanedResponse = {
+    id: createdCounseling.data[0]?.id,
     full_name: createdCounseling.data[0]?.full_name,
     birthdate,
     gender,
@@ -134,9 +135,10 @@ router.post('/counselings/psychologists/:id', async (req, res) => {
 router.get('/counselings/:id', async (req, res) => {
   const counselingId = parseInt(req.params.id);
   const getPatientData = await supabase.from('counselings').select('id, patient_id, patients (users (phone_number))').eq('id', counselingId).single()
-  const createdCounseling = await supabase.from('counselings').select('full_name, nickname, schedule_date, schedule_time, type').eq('id', counselingId).single();
+  const createdCounseling = await supabase.from('counselings').select('id, full_name, nickname, schedule_date, schedule_time, type').eq('id', counselingId).single();
 
   cleanedResponse = {
+    id: createdCounseling.data.id,
     full_name: createdCounseling.data.full_name,
     nickname: createdCounseling.data.nickname,
     phone_number: getPatientData.data.patients.users.phone_number,
