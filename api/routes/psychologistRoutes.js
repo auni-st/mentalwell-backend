@@ -4,7 +4,7 @@ const { supabase } = require('../utils/supabase');
 const { jwt } = require('../utils/encrypt');
 const { upload } = require('../utils/multer');
 
-router.get('/psychologist/profile/:id', async (req, res) => {
+router.get('/psychologist/profile', async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
   if (!token) {
@@ -38,7 +38,7 @@ router.get('/psychologist/profile/:id', async (req, res) => {
   res.json(cleanedResponse)
 })
 
-router.put('/psychologist/:id', upload.single('profile_image'), async (req, res) => {
+router.put('/psychologist', upload.single('profile_image'), async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
   if (!token) {
@@ -259,7 +259,7 @@ router.get('/psychologists/:id', async (req, res) => {
   res.json(cleanedResponse)
 })
 
-router.get('/counselings/psychologist/:id', async (req, res) => {
+router.get('/dashboard/psychologist', async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
   if (!token) {
@@ -273,7 +273,9 @@ router.get('/counselings/psychologist/:id', async (req, res) => {
     res.status(401).json({ message: 'dashboard psychologist can only be seen by psychologist!' })
   }
 
-  const psychologistId = req.params.id;
+  const userId = currentUser.id;
+  const psychologistIdRaw = await supabase.from('psychologists').select('id').eq('user_id', userId).single();
+  const psychologistId = psychologistIdRaw.data.id;
   const psychologistAvailability = await supabase.from('psychologists').select('availability').eq('id', psychologistId).single();
 
   const counselingData = await supabase.from('counselings').select('id, patients (users (name)), schedule_date, schedule_time, type, status').eq('psychologist_id', psychologistId).order('status', { ascending: true })
@@ -294,7 +296,7 @@ router.get('/counselings/psychologist/:id', async (req, res) => {
   res.json(cleanedResponse)
 })
 
-router.put('/counselings/psychologist/:id', async (req, res) => {
+router.put('/counselings/psychologist', async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
   if (!token) {
@@ -308,7 +310,10 @@ router.put('/counselings/psychologist/:id', async (req, res) => {
     res.status(401).json({ message: 'edit psychologist availability can only be done by psychologist!' })
   }
 
-  const psychologistId = req.params.id;
+  const userId = currentUser.id;
+  const psychologistIdRaw = await supabase.from('psychologists').select('id').eq('user_id', userId).single();
+  const psychologistId = psychologistIdRaw.data.id;
+
   const { newAvailability } = req.body;
 
   const { data, error } = await supabase.from('psychologists').update({ availability: newAvailability }).eq('id', psychologistId);

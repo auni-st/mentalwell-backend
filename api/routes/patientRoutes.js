@@ -4,7 +4,7 @@ const { supabase } = require('../utils/supabase');
 const { jwt } = require('../utils/encrypt');
 const { upload } = require('../utils/multer');
 
-router.get('/patient/:id', async (req, res) => {
+router.get('/patient', async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
   if (!token) {
@@ -23,7 +23,7 @@ router.get('/patient/:id', async (req, res) => {
   res.json(patientData.data)
 })
 
-router.put('/patient/:id', upload.single('profile_image'), async (req, res) => {
+router.put('/patient', upload.single('profile_image'), async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
   if (!token) {
@@ -71,7 +71,7 @@ router.put('/patient/:id', upload.single('profile_image'), async (req, res) => {
 
 })
 
-router.get('/counselings/patient/:id', async (req, res) => {
+router.get('/counselings/patient', async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
   if (!token) {
@@ -133,18 +133,17 @@ router.post('/counselings/psychologists/:id', async (req, res) => {
 })
 
 router.get('/counselings/:id', async (req, res) => {
-  const counselingId = parseInt(req.params.id);
-  const getPatientData = await supabase.from('counselings').select('id, patient_id, patients (users (phone_number))').eq('id', counselingId).single()
-  const createdCounseling = await supabase.from('counselings').select('id, full_name, nickname, schedule_date, schedule_time, type').eq('id', counselingId).single();
+  const counselingId = req.params.id;
+  const counselings = await supabase.from('counselings').select('id, full_name, nickname, schedule_date, schedule_time, type, patients(users (phone_number))').eq('id', counselingId).single();
 
   cleanedResponse = {
-    id: createdCounseling.data.id,
-    full_name: createdCounseling.data.full_name,
-    nickname: createdCounseling.data.nickname,
-    phone_number: getPatientData.data.patients.users.phone_number,
-    schedule_date: createdCounseling.data.schedule_date,
-    schedule_time: createdCounseling.data.schedule_time,
-    type: createdCounseling.data.type
+    id: counselings.data.id,
+    full_name: counselings.data.full_name,
+    nickname: counselings.data.nickname,
+    phone_number: counselings.data.patients.users.phone_number,
+    schedule_date: counselings.data.schedule_date,
+    schedule_time: counselings.data.schedule_time,
+    type: counselings.data.type
   }
   res.json(cleanedResponse)
 })
