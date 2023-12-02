@@ -1,2 +1,2 @@
-# mentalwell-backend
+# MentalWell-backend
 Backend Application for MentalWell
