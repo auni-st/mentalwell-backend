@@ -154,7 +154,7 @@ router.get('/psychologists_index', async (req, res) => {
     profile_image: item.users?.profile_image,
     name: item.users?.name
   }));
-  res.json({ data: names });
+  res.json(names);
 })
 
 router.get('/psychologists', async (req, res) => {
