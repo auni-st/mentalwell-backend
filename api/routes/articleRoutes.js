@@ -25,14 +25,14 @@ router.post('/articles', upload.single('image'), async (req, res) => {
 
     const createdArticle = await supabase.from('articles').select('id, image, title, content, references').order('created_at', { ascending: false }).limit(1);
 
-    res.status(201).json({ message: 'article create success', data: { image: createdArticle.data[0].image, title: createdArticle.data[0].title, content: createdArticle.data[0].content, references: createdArticle.data[0].references } })
+    res.status(201).json({ message: 'article create success', data: { id: createdArticle.data[0].id, image: createdArticle.data[0].image, title: createdArticle.data[0].title, content: createdArticle.data[0].content, references: createdArticle.data[0].references } })
   }
 
   if (!req.file) {
     const { data, e } = await supabase.from('articles').upsert([{ title, content, references }]);
 
-    const createdArticle = await supabase.from('articles').select('title, image, content, references').order('created_at', { ascending: false }).limit(1);
-    res.status(201).json({ message: 'article create success', data: { image: createdArticle.data[0].image, title: createdArticle.data[0].title, content: createdArticle.data[0].content, references: createdArticle.data[0].references } })
+    const createdArticle = await supabase.from('articles').select('id, title, image, content, references').order('created_at', { ascending: false }).limit(1);
+    res.status(201).json({ message: 'article create success', data: { id: createdArticle.data[0].id, image: createdArticle.data[0].image, title: createdArticle.data[0].title, content: createdArticle.data[0].content, references: createdArticle.data[0].references } })
   }
 })
 
