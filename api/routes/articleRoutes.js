@@ -52,7 +52,7 @@ router.get('/articles', async (req, res) => {
 router.get('/articles/:id', async (req, res) => {
   const articleId = req.params.id;
   try {
-    const { data, e } = await supabase.from('articles').select('id, image, title, content, created_at').eq('id', articleId);
+    const { data, e } = await supabase.from('articles').select('id, image, title, content, references, created_at').eq('id', articleId);
 
     if (e) throw e;
 
