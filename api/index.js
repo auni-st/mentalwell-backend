@@ -20,6 +20,8 @@ const articleRoutes = require('./routes/articleRoutes');
 // Use CORS middleware with the desired options
 app.use(cors({
   origin: '*',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true, // Allow cookies, authorization headers, etc.
 }));
 
 //use routes
