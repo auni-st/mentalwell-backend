@@ -340,12 +340,13 @@ router.get('/dashboard/counseling/:id', async (req, res) => {
 
   const counselingId = req.params.id;
 
-  const data = await supabase.from('counselings').select('id, patients (users(birthdate, gender, phone_number)), full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after, status').eq('id', counselingId)
+  const data = await supabase.from('counselings').select('id, patients (users(profile_image,birthdate, gender, phone_number)), full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after, status').eq('id', counselingId)
 
   const counselingData = data.data.map(counseling => ({
     id: counseling.id,
     full_name: counseling.full_name,
     nickname: counseling.nickname,
+    profile_image: counseling.patients.users.profile_image,
     birthdate: counseling.patients.users.birthdate,
     gender: counseling.patients.users.gender,
     phone_number: counseling.patients.users.phone_number,
