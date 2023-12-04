@@ -19,7 +19,7 @@ const articleRoutes = require('./routes/articleRoutes');
 //set CORS
 // Use CORS middleware with the desired options
 app.use(cors({
-  origin: '*',
+  origin: ['http://localhost:5501', 'https://mentalwell.vercel.app'],
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true, // Allow cookies, authorization headers, etc.
   allowedHeaders: 'Content-Type,Authorization', // Add Authorization header
