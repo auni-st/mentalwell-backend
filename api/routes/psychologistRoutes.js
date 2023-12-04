@@ -239,11 +239,12 @@ router.get('/psychologists', async (req, res) => {
 router.get('/psychologists/:id', async (req, res) => {
   const psychologistId = req.params.id;
 
-  const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, users(name), psychologists_topics (id, psychologist_id, topic_id, topics (id, name)), counselings (id, review, patients(users(name)))').eq('id', psychologistId).single()
+  const joinManytoMany = await supabase.from('psychologists').select('id, bio, experience, users(name, profile_image), psychologists_topics (id, psychologist_id, topic_id, topics (id, name)), counselings (id, review, patients(users(name)))').eq('id', psychologistId).single()
 
   const cleanedResponse = {
     id: joinManytoMany.data.id,
     name: joinManytoMany.data.users.name,
+    profile_image: joinManytoMany.data.users.profile_image,
     bio: joinManytoMany.data.bio,
     experience: joinManytoMany.data.experience,
     psychologist_topics: joinManytoMany.data.psychologists_topics.map(item => ({
