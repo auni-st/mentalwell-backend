@@ -279,7 +279,7 @@ router.get('/dashboard/psychologist', async (req, res) => {
   const psychologistId = psychologistIdRaw.data.id;
   const psychologistAvailability = await supabase.from('psychologists').select('availability').eq('id', psychologistId).single();
 
-  const counselingData = await supabase.from('counselings').select('id, patients(users(name)), schedule_date, schedule_time, type, status').eq('psychologist_id', psychologistId).order('status', { ascending: true })
+  const counselingData = await supabase.from('counselings').select('id, patients(users(name)), schedule_date, schedule_time, type, status').eq('psychologist_id', psychologistId).order('status', { ascending: true }).order('schedule_date', {ascending: true})
   const counselingList = counselingData.data
 
   const cleanedResponse = {
