@@ -279,14 +279,14 @@ router.get('/dashboard/psychologist', async (req, res) => {
   const psychologistId = psychologistIdRaw.data.id;
   const psychologistAvailability = await supabase.from('psychologists').select('availability').eq('id', psychologistId).single();
 
-  const counselingData = await supabase.from('counselings').select('id, full_name, schedule_date, schedule_time, type, status').eq('psychologist_id', psychologistId).order('status', { ascending: true })
+  const counselingData = await supabase.from('counselings').select('id, patients(users(name)), schedule_date, schedule_time, type, status').eq('psychologist_id', psychologistId).order('status', { ascending: true })
   const counselingList = counselingData.data
 
   const cleanedResponse = {
     psychologistAvailability: psychologistAvailability.data.availability,
     counselingList: counselingList.map(counseling => ({
       id: counseling.id,
-      patientName: counseling.full_name,
+      patientName: counseling.patients.users.name,
       scheduleDate: counseling.schedule_date,
       scheduleTime: counseling.schedule_time,
       type: counseling.type,
@@ -340,12 +340,12 @@ router.get('/dashboard/counseling/:id', async (req, res) => {
 
   const counselingId = req.params.id;
 
-  const data = await supabase.from('counselings').select('id, patients (users(profile_image,birthdate, gender, phone_number)), full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after, status').eq('id', counselingId)
+  const data = await supabase.from('counselings').select('id, patients (users(name, nickname, profile_image,birthdate, gender, phone_number)), occupation, schedule_date, schedule_time, type, problem_description, hope_after, status').eq('id', counselingId)
 
   const counselingData = data.data.map(counseling => ({
     id: counseling.id,
-    full_name: counseling.full_name,
-    nickname: counseling.nickname,
+    full_name: counseling.patients.users.name,
+    nickname: counseling.patients.users.nickname,
     profile_image: counseling.patients.users.profile_image,
     birthdate: counseling.patients.users.birthdate,
     gender: counseling.patients.users.gender,
