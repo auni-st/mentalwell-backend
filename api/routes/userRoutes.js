@@ -3,6 +3,21 @@ const router = express.Router();
 const { supabase } = require('../utils/supabase');
 const { emailRegex, passwordRegex, phoneRegex } = require('../utils/regex')
 const { bcrypt } = require('../utils/encrypt')
+const { jwt } = require('../utils/encrypt');
+
+router.get('/currentUser', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  const detailUser = await supabase.from('users').select('id, nickname, profile_image').eq('id', currentUser.id)
+  res.json(detailUser.data);
+})
 
 router.post('/users', async (req, res) => {
   const { email, password, password_confirm, phone_number, role = 'patient' } = req.body;

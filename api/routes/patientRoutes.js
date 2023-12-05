@@ -18,7 +18,7 @@ router.get('/patient', async (req, res) => {
     res.status(401).json({ message: 'profile patient can only be done by patient!' })
   }
 
-  const patientData = await supabase.from('patients').select('id, users (email, phone_number, birthdate, gender, profile_image)').eq('user_id', currentUser.id).single();
+  const patientData = await supabase.from('patients').select('id, users (name, nickname, email, phone_number, birthdate, gender, profile_image)').eq('user_id', currentUser.id).single();
 
   res.json(patientData.data)
 })
@@ -37,7 +37,7 @@ router.put('/patient', upload.single('profile_image'), async (req, res) => {
     res.status(401).json({ message: 'update patient profile can only be done by patient!' })
   }
 
-  const { newPhone_number, newBirthdate, newGender } = req.body;
+  const { newName, newNickname, newPhone_number, newBirthdate, newGender } = req.body;
 
   const allowedMimeTypes = ['image/jpeg']
   //for profile_image
@@ -53,18 +53,18 @@ router.put('/patient', upload.single('profile_image'), async (req, res) => {
 
     const { data: publicUrl } = await supabase.storage.from('mentalwell-profileimage').getPublicUrl(`profile_image/${currentUser.id}_${req.file.originalname}`)
 
-    const editPatientData = await supabase.from('users').update({ phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender, profile_image: publicUrl.publicUrl }).eq('id', currentUser.id)
+    const editPatientData = await supabase.from('users').update({ name: newName, nickname: newNickname, phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender, profile_image: publicUrl.publicUrl }).eq('id', currentUser.id)
 
-    const data = await supabase.from('users').select('phone_number, birthdate, gender, profile_image').eq('id', currentUser.id).single();
+    const data = await supabase.from('users').select('name, nickname, phone_number, birthdate, gender, profile_image').eq('id', currentUser.id).single();
 
     res.json(data.data);
 
   }
 
   if (!req.file) {
-    const editPatientData = await supabase.from('users').update({ phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender }).eq('id', currentUser.id)
+    const editPatientData = await supabase.from('users').update({ name: newName, nickname: newNickname, phone_number: newPhone_number, birthdate: newBirthdate, gender: newGender }).eq('id', currentUser.id)
 
-    const data = await supabase.from('users').select('phone_number, birthdate, gender, profile_image').eq('id', currentUser.id).single();
+    const data = await supabase.from('users').select('name, nickname, phone_number, birthdate, gender, profile_image').eq('id', currentUser.id).single();
 
     res.json(data.data);
   }
@@ -85,7 +85,7 @@ router.get('/counselings/patient', async (req, res) => {
     res.status(401).json({ message: 'create counseling can only be done by patient!' })
   }
 
-  const getData = await supabase.from('patients').select('id, users (phone_number, birthdate, gender)').eq('user_id', currentUser.id)
+  const getData = await supabase.from('patients').select('id, users (name, nickname, phone_number, birthdate, gender)').eq('user_id', currentUser.id)
   res.json(getData.data[0])
 })
 
@@ -105,22 +105,23 @@ router.post('/counselings/psychologists/:id', async (req, res) => {
 
   const currentPatient = await supabase.from('patients').select('id').eq('user_id', currentUser.id)
 
-  const { full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after } = req.body
-  const getData = await supabase.from('patients').select('id, users (phone_number, birthdate, gender)').eq('user_id', currentUser.id)
+  const { occupation, schedule_date, schedule_time, type, problem_description, hope_after } = req.body
+  const getData = await supabase.from('patients').select('id, users (name, nickname, phone_number, birthdate, gender)').eq('user_id', currentUser.id)
+  const name = getData.data[0].users.name;
+  const nickname = getData.data[0].users.nickname;
   const phone_number = getData.data[0].users.phone_number;
-  // res.json(phone_number)
   const birthdate = getData.data[0].users.birthdate;
   const gender = getData.data[0].users.gender;
-  const { data, e } = await supabase.from('counselings').upsert([{ patient_id: currentPatient.data[0].id, psychologist_id: parseInt(req.params.id), full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after }]);
-  const createdCounseling = await supabase.from('counselings').select('id, full_name, nickname, occupation, schedule_date, schedule_time, type, problem_description, hope_after').order('created_at', { ascending: false }).limit(1);
+  const { data, e } = await supabase.from('counselings').upsert([{ patient_id: currentPatient.data[0].id, psychologist_id: parseInt(req.params.id), occupation, schedule_date, schedule_time, type, problem_description, hope_after }]);
+  const createdCounseling = await supabase.from('counselings').select('id, occupation, schedule_date, schedule_time, type, problem_description, hope_after').order('created_at', { ascending: false }).limit(1);
 
   const cleanedResponse = {
     id: createdCounseling.data[0]?.id,
-    full_name: createdCounseling.data[0]?.full_name,
+    name,
+    nickname,
     birthdate,
     gender,
     phone_number,
-    nickname: createdCounseling.data[0]?.nickname,
     occupation: createdCounseling.data[0]?.occupation,
     schedule_date: createdCounseling.data[0]?.schedule_date,
     schedule_time: createdCounseling.data[0]?.schedule_time,
@@ -134,12 +135,12 @@ router.post('/counselings/psychologists/:id', async (req, res) => {
 
 router.get('/counselings/:id', async (req, res) => {
   const counselingId = req.params.id;
-  const counselings = await supabase.from('counselings').select('id, full_name, nickname, schedule_date, schedule_time, type, patients(users (phone_number))').eq('id', counselingId).single();
+  const counselings = await supabase.from('counselings').select('id, schedule_date, schedule_time, type, patients(users (name, nickname, phone_number))').eq('id', counselingId).single();
 
   cleanedResponse = {
     id: counselings.data.id,
-    full_name: counselings.data.full_name,
-    nickname: counselings.data.nickname,
+    full_name: counselings.data.patients.users.name,
+    nickname: counselings.data.patients.users.nickname,
     phone_number: counselings.data.patients.users.phone_number,
     schedule_date: counselings.data.schedule_date,
     schedule_time: counselings.data.schedule_time,
