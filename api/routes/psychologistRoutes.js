@@ -4,6 +4,21 @@ const { supabase } = require('../utils/supabase');
 const { jwt } = require('../utils/encrypt');
 const { upload } = require('../utils/multer');
 
+router.get('/currentPsychologist', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
+
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  const detailUser = await supabase.from('users').select('id, name, profile_image').eq('id', currentUser.id)
+  res.json(detailUser.data);
+})
+
+
 router.get('/psychologist/profile', async (req, res) => {
   const token = req.headers.authorization.split(' ')[1];
   //Authorization: 'Bearer TOKEN'
