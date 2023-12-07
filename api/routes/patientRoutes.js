@@ -133,10 +133,26 @@ router.post('/counselings/psychologists/:id', async (req, res) => {
   res.status(201).json({ data: cleanedResponse })
 })
 
-router.get('/counselings/:id', async (req, res) => {
-  const counselingId = req.params.id;
-  const counselings = await supabase.from('counselings').select('id, schedule_date, schedule_time, type, patients(users (name, nickname, phone_number))').eq('id', counselingId).single();
+router.get('/confirmedCounseling/', async (req, res) => {
+  const token = req.headers.authorization.split(' ')[1];
+  //Authorization: 'Bearer TOKEN'
+  if (!token) {
+    res.status(200).json({ message: 'error! token was not provided' })
+  }
 
+  //Decode token
+  const currentUser = jwt.verify(token, "secretkeyappearshere");
+
+  if (currentUser.role !== "patient") {
+    res.status(401).json({ message: 'confirmed counseling can only be seen by patient!' })
+  }
+
+  const patientId = await supabase.from('users').select('patients(id)').eq('id', currentUser.id).single()
+  // res.json(patientId.data.patients[0].id)
+
+  const counselings = await supabase.from('counselings').select('id, schedule_date, schedule_time, type, patients(users (name, nickname, phone_number))').eq('patient_id', patientId.data.patients[0].id).order('created_at', { ascending: false }).limit(1).single();
+
+  // res.json(counselings)
   cleanedResponse = {
     id: counselings.data.id,
     full_name: counselings.data.patients.users.name,
