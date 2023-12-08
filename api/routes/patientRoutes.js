@@ -208,4 +208,21 @@ router.post('/history/counselings/:id', async (req, res) => {
   res.json({ data: { review: addedReview.data[0].review } })
 })
 
+router.get('/schedule/psychologist/:id', async (req, res) => {
+  const psychologistId = req.params.id;
+
+  const data = await supabase.from('psychologists').select('id, users(name), counselings (schedule_date, schedule_time, status)').eq('id', psychologistId).single()
+
+  const cleanedResponse = {
+    id: data.data.id,
+    name: data.data.users.name,
+    counselings: data.data.counselings.map(counseling => ({
+      schedule_date: counseling.schedule_date,
+      schedule_time: counseling.schedule_time,
+      status: counseling.status,
+    })),
+  }
+  res.json(cleanedResponse)
+})
+
 module.exports = router
