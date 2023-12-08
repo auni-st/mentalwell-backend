@@ -225,4 +225,18 @@ router.get('/schedule/psychologist/:id', async (req, res) => {
   res.json(cleanedResponse)
 })
 
+router.get('/availability/psychologist/:id', async (req, res) => {
+  const psychologistId = req.params.id;
+
+  const data = await supabase.from('psychologists').select('id, users(name), availability').eq('id', psychologistId).single();
+  
+  const cleanedResponse = {
+    id: data.data.id,
+    name: data.data.users.name,
+    availability: data.data.availability
+  }
+  
+  res.json(cleanedResponse)
+})
+
 module.exports = router
