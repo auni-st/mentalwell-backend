@@ -63,7 +63,6 @@ describe('Auth Routes', () => {
     expect(response.body.data).to.have.property('email');
     expect(response.body.data).to.have.property('name');
     expect(response.body.data).to.have.property('role');
-    expect(response.body.data).to.have.property('nothing_for_test');
 
   });
 
