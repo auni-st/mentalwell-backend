@@ -16,7 +16,7 @@ jobs:
             echo "export SUPABASE_KEY=$SUPABASE_KEY" >> $BASH_ENV
             source $BASH_ENV
             npm test
-            exit
+
   deploy:
     docker:
       - image: circleci/node:16
