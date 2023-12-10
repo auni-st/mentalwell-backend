@@ -7,6 +7,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install mocha
+          command: sudo npm install mocha
+      - run:
           name: Run Tests
           command: sudo npm test
 
