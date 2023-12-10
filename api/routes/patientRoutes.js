@@ -182,7 +182,7 @@ router.get('/history', async (req, res) => {
 
   const history = await supabase.from('counselings').select('*').eq('patient_id', currentPatientData.id);
 
-  const { data, error } = await supabase.from('counselings').select(`id, schedule_date, schedule_time, type, status, psychologists (users(name))`).eq('patient_id', currentPatientData.id).order('status', { ascending: true })
+  const { data, error } = await supabase.from('counselings').select(`id, schedule_date, schedule_time, type, status, review, psychologists (users(name))`).eq('patient_id', currentPatientData.id).order('status', { ascending: true })
 
   const counselingData = data.map(counseling => ({
     id: counseling.id,
@@ -191,6 +191,7 @@ router.get('/history', async (req, res) => {
     schedule_time: counseling.schedule_time,
     type: counseling.type,
     status: counseling.status,
+    review: counseling.review,
   }));
 
   res.status(200).json(counselingData)
