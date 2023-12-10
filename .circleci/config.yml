@@ -8,10 +8,10 @@ jobs:
       - checkout
       - run:
           name: Install mocha
-          command: sudo npm install 
+          command: sudo npm install
       - run:
           name: Run Tests
-          command: sudo npm test
+          command: SUPABASE_URL=$SUPABASE_URL SUPABASE_KEY=$SUPABASE_KEY sudo npm test
 
   deploy:
     docker:
