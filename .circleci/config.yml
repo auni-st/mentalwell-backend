@@ -9,9 +9,6 @@ jobs:
       - run:
           name: Install mocha
           command: sudo npm install
-      # - run:
-      #     name: Debug Tests
-      #     command:  echo "SUPABASE_URL:$SUPABASE_URL"
       - run:
           name: Run Tests
           command: |
@@ -19,7 +16,7 @@ jobs:
             echo "export SUPABASE_KEY=$SUPABASE_KEY" >> $BASH_ENV
             source $BASH_ENV
             npm test
-
+            exit
   deploy:
     docker:
       - image: circleci/node:16
