@@ -84,8 +84,7 @@ router.post('/forgot-password', async (req, res) => {
       from: 'mentalwell.app@gmail.com',
       to: email,
       subject: 'Ubah Sandi',
-      // text: `Klik link berikut untuk mengubah password anda: https://mentalwell-backend.vercel.app/reset-password?token=${resetToken}`
-      text: `Klik link berikut untuk mengubah password anda: https://mentalwell.vercel.app/ubah-sandi?token=${resetToken}`
+      text: `Klik tautan berikut untuk mengubah kata sandi anda: https://mentalwell.vercel.app/ubah-sandi?token=${resetToken}`
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
@@ -113,11 +112,11 @@ router.put('/reset-password/:token', async (req, res) => {
   const { data: resetTokenData, error: tokenError } = await supabase.from('password_reset_tokens').select('user_id, expires_at').eq('token', token).single()
 
   if (tokenError) {
-    res.json({ message: 'Error fetching reset token' })
+    res.status(500).json({ message: 'Error fetching reset token' })
   }
 
   if (!resetTokenData) {
-    res.json({ message: 'Reset token has expired' })
+    res.status(500).json({ message: 'Reset token has expired' })
   }
 
   const { user_id, expires_at } = resetTokenData;
@@ -133,7 +132,7 @@ router.put('/reset-password/:token', async (req, res) => {
 
   await supabase.from('password_reset_tokens').delete().eq('token', token);
 
-  res.json({ message: 'Password reset successful!' })
+  res.status(200).json({ message: 'Password reset successful!' })
 })
 
 

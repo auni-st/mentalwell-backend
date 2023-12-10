@@ -16,7 +16,7 @@ router.get('/currentUser', async (req, res) => {
   const currentUser = jwt.verify(token, "secretkeyappearshere");
 
   const detailUser = await supabase.from('users').select('id, nickname, profile_image').eq('id', currentUser.id)
-  res.json(detailUser.data);
+  res.status(200).json(detailUser.data);
 })
 
 router.post('/users', async (req, res) => {
