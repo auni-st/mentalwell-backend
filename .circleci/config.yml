@@ -9,12 +9,16 @@ jobs:
       - run:
           name: Install mocha
           command: sudo npm install
-      - run:
-          name: Debug Tests
-          command:  echo "SUPABASE_URL:$SUPABASE_URL"
       # - run:
-      #     name: Run Tests
-      #     command: SUPABASE_URL=$SUPABASE_URL SUPABASE_KEY=$SUPABASE_KEY sudo npm test
+      #     name: Debug Tests
+      #     command:  echo "SUPABASE_URL:$SUPABASE_URL"
+      - run:
+          name: Run Tests
+          command: |
+            echo "export SUPABASE_URL=$SUPABASE_URL" >> $BASH_ENV
+            echo "export SUPABASE_KEY=$SUPABASE_KEY" >> $BASH_ENV
+            source $BASH_ENV
+            npm test
 
   deploy:
     docker:
