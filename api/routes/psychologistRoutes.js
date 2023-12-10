@@ -15,7 +15,7 @@ router.get('/currentPsychologist', async (req, res) => {
   const currentUser = jwt.verify(token, "secretkeyappearshere");
 
   const detailUser = await supabase.from('users').select('id, name, profile_image').eq('id', currentUser.id)
-  res.json(detailUser.data);
+  res.status(200).json(detailUser.data);
 })
 
 
@@ -50,7 +50,7 @@ router.get('/psychologist/profile', async (req, res) => {
       topic_name: item.topics.name
     }))
   }
-  res.json(cleanedResponse)
+  res.status(200).json(cleanedResponse)
 })
 
 router.put('/psychologist', upload.single('profile_image'), async (req, res) => {
@@ -67,8 +67,6 @@ router.put('/psychologist', upload.single('profile_image'), async (req, res) => 
   if (currentUser.role !== "psychologist") {
     res.status(401).json({ message: 'edit psychologist profile can only be done by psychologist!' })
   }
-
-  // res.json(psychologistId.data.id)
 
   const { newName, newPhone_number, newBirthdate, newGender, newBio, newExperience, newTopics } = req.body
 
@@ -119,7 +117,7 @@ router.put('/psychologist', upload.single('profile_image'), async (req, res) => 
       }))
 
     }
-    res.json(cleanedResponse);
+    res.status(200).json(cleanedResponse);
 
   }
 
@@ -157,7 +155,7 @@ router.put('/psychologist', upload.single('profile_image'), async (req, res) => 
       }))
 
     }
-    res.json(cleanedResponse);
+    res.status(200).json(cleanedResponse);
   }
 })
 
@@ -169,7 +167,7 @@ router.get('/psychologists_index', async (req, res) => {
     profile_image: item.users?.profile_image,
     name: item.users?.name
   }));
-  res.json(names);
+  res.status(200).json(names);
 })
 
 router.get('/psychologists', async (req, res) => {
@@ -191,9 +189,8 @@ router.get('/psychologists', async (req, res) => {
       };
     });
 
-    res.json(psychologistsWithReviewCount)
+    res.status(200).json(psychologistsWithReviewCount)
   } else if (name && topics) {
-    // res.json({message: 'works!'})
     const arrayTopics = [topics]
     const joinedIds = `(${arrayTopics.join(',')})`;
 
@@ -227,7 +224,7 @@ router.get('/psychologists', async (req, res) => {
       };
     });
 
-    res.json(psychologistsWithReviewCount)
+    res.status(200).json(psychologistsWithReviewCount)
   } else if (topics) {
     const arrayTopics = [topics]
     const joinedIds = `(${arrayTopics.join(',')})`;
@@ -246,7 +243,7 @@ router.get('/psychologists', async (req, res) => {
       };
     });
 
-    res.json(psychologistsWithReviewCount)
+    res.status(200).json(psychologistsWithReviewCount)
   }
 
 })
@@ -272,7 +269,7 @@ router.get('/psychologists/:id', async (req, res) => {
       review: item.review,
     }))
   }
-  res.json(cleanedResponse)
+  res.status(200).json(cleanedResponse)
 })
 
 router.get('/dashboard/psychologist', async (req, res) => {
@@ -309,7 +306,7 @@ router.get('/dashboard/psychologist', async (req, res) => {
     })),
   };
 
-  res.json(cleanedResponse)
+  res.status(200).json(cleanedResponse)
 })
 
 router.put('/counselings/psychologist', async (req, res) => {
@@ -335,7 +332,7 @@ router.put('/counselings/psychologist', async (req, res) => {
   const { data, error } = await supabase.from('psychologists').update({ availability: newAvailability }).eq('id', psychologistId);
 
   const viewData = await supabase.from('psychologists').select('availability').eq('id', psychologistId).single();
-  res.json(viewData.data)
+  res.status(200).json(viewData.data)
 
 })
 
@@ -374,7 +371,7 @@ router.get('/dashboard/counseling/:id', async (req, res) => {
     status: counseling.status,
   }));
 
-  res.json(counselingData)
+  res.status(200).json(counselingData)
 })
 
 router.put('/dashboard/counseling/:id', async (req, res) => {
@@ -399,7 +396,7 @@ router.put('/dashboard/counseling/:id', async (req, res) => {
   const viewData = await supabase.from('counselings').select('status').eq('id', counselingId);
 
 
-  res.json(viewData.data)
+  res.status(200).json(viewData.data)
 })
 
 module.exports = router 

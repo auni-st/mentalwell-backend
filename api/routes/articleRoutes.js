@@ -41,12 +41,12 @@ router.get('/articles', async (req, res) => {
 
   if (!title) {
     const { data, error } = await supabase.from('articles').select('id, image, title, content, created_at');
-    return res.json(data);
+    return res.status(200).json(data);
   }
 
   // const { data, error } = await supabase.from('articles').select('id, title, content, created_at').ilike('title', title);
   const { data, error } = await supabase.from('articles').select('id, image, title, content, created_at').ilike('title', `%${title}%`);
-  res.json(data);
+  res.status(200).json(data);
 })
 
 router.get('/articles/:id', async (req, res) => {
@@ -56,7 +56,7 @@ router.get('/articles/:id', async (req, res) => {
 
     if (e) throw e;
 
-    res.json(data);
+    res.status(200).json(data);
   } catch (e) {
     console.error('Error fetching data from Supabase:', e);
     res.status(500).json({ error: 'Internal Server Error' });

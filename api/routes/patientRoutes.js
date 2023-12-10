@@ -20,7 +20,7 @@ router.get('/patient', async (req, res) => {
 
   const patientData = await supabase.from('patients').select('id, users (name, nickname, email, phone_number, birthdate, gender, profile_image)').eq('user_id', currentUser.id).single();
 
-  res.json(patientData.data)
+  res.status(200).json(patientData.data)
 })
 
 router.put('/patient', upload.single('profile_image'), async (req, res) => {
@@ -57,7 +57,7 @@ router.put('/patient', upload.single('profile_image'), async (req, res) => {
 
     const data = await supabase.from('users').select('name, nickname, phone_number, birthdate, gender, profile_image').eq('id', currentUser.id).single();
 
-    res.json(data.data);
+    res.status(200).json(data.data);
 
   }
 
@@ -66,7 +66,7 @@ router.put('/patient', upload.single('profile_image'), async (req, res) => {
 
     const data = await supabase.from('users').select('name, nickname, phone_number, birthdate, gender, profile_image').eq('id', currentUser.id).single();
 
-    res.json(data.data);
+    res.status(200).json(data.data);
   }
 
 })
@@ -86,7 +86,7 @@ router.get('/counselings/patient', async (req, res) => {
   }
 
   const getData = await supabase.from('patients').select('id, users (name, nickname, phone_number, birthdate, gender)').eq('user_id', currentUser.id)
-  res.json(getData.data[0])
+  res.status(200).json(getData.data[0])
 })
 
 router.post('/counselings/psychologists/:id', async (req, res) => {
@@ -148,11 +148,9 @@ router.get('/confirmedCounseling/', async (req, res) => {
   }
 
   const patientId = await supabase.from('users').select('patients(id)').eq('id', currentUser.id).single()
-  // res.json(patientId.data.patients[0].id)
 
   const counselings = await supabase.from('counselings').select('id, schedule_date, schedule_time, type, patients(users (name, nickname, phone_number))').eq('patient_id', patientId.data.patients[0].id).order('created_at', { ascending: false }).limit(1).single();
 
-  // res.json(counselings)
   cleanedResponse = {
     id: counselings.data.id,
     full_name: counselings.data.patients.users.name,
@@ -162,7 +160,7 @@ router.get('/confirmedCounseling/', async (req, res) => {
     schedule_time: counselings.data.schedule_time,
     type: counselings.data.type
   }
-  res.json(cleanedResponse)
+  res.status(200).json(cleanedResponse)
 })
 
 router.get('/history', async (req, res) => {
@@ -195,7 +193,7 @@ router.get('/history', async (req, res) => {
     status: counseling.status,
   }));
 
-  res.json(counselingData)
+  res.status(200).json(counselingData)
 })
 
 router.post('/history/counselings/:id', async (req, res) => {
@@ -222,7 +220,7 @@ router.get('/schedule/psychologist/:id', async (req, res) => {
       status: counseling.status,
     })),
   }
-  res.json(cleanedResponse)
+  res.status(201).json(cleanedResponse)
 })
 
 router.get('/availability/psychologist/:id', async (req, res) => {
@@ -236,7 +234,7 @@ router.get('/availability/psychologist/:id', async (req, res) => {
     availability: data.data.availability
   }
   
-  res.json(cleanedResponse)
+  res.status(200).json(cleanedResponse)
 })
 
 module.exports = router
