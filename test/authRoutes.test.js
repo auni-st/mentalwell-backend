@@ -49,8 +49,8 @@ describe('Auth Routes', () => {
   });
 
   it('should access the resource with a valid token', async () => {
-    // If test failed, it's possible that token is expired. Get new token by login as psychologist
-    const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTc4LCJlbWFpbCI6ImFyYW1hZGhhbjM5NUBnbWFpbC5jb20iLCJuYW1lIjoiQWhtYWQgUmFtYWRoYW4gQXVuaSAyIiwicm9sZSI6InBhdGllbnQiLCJpYXQiOjE3MDIwMDY4OTcsImV4cCI6MTcwMjYxMTY5N30.1rlQFQGoebq5VpvpA5P_9qb4yWUyXpj91tr5fSYrBpQ';
+    // If test failed, it's possible that token is expired. Get new token by login 
+    const mockToken = process.env.PATIENT_TOKEN;
 
     const response = await supertest(app)
       .get('/accessResource')

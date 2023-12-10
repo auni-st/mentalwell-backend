@@ -9,7 +9,7 @@ const expect = require('chai').expect;
 describe('Psychologist Routes', () => {
   it('should get details of the current psychologist', async () => {
     // If test failed, it's possible that token is expired. Get new token by login as psychologist
-    const mockPsychologistToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcxLCJlbWFpbCI6ImJhbWJhbmdAZ21haWwuY29tIiwibmFtZSI6IkJhbWJhbmcsIFMuUHNpIiwicm9sZSI6InBzeWNob2xvZ2lzdCIsImlhdCI6MTcwMjEyMDk4NSwiZXhwIjoxNzAyNzI1Nzg1fQ.4auVq4XG0b9UOAMcvW3dLgeQL4DkJiik7wYIryK0M2s';
+    const mockPsychologistToken = process.env.PSYCHOLOGIST_TOKEN;
 
     const response = await supertest(app)
       .get('/currentPsychologist')
@@ -27,7 +27,7 @@ describe('Psychologist Routes', () => {
 
   it('should get the profile of the current psychologist', async () => {
     // If test failed, it's possible that token is expired. Get new token by login as psychologist
-    const mockPsychologistToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcxLCJlbWFpbCI6ImJhbWJhbmdAZ21haWwuY29tIiwibmFtZSI6IkJhbWJhbmcsIFMuUHNpIiwicm9sZSI6InBzeWNob2xvZ2lzdCIsImlhdCI6MTcwMjEyMDk4NSwiZXhwIjoxNzAyNzI1Nzg1fQ.4auVq4XG0b9UOAMcvW3dLgeQL4DkJiik7wYIryK0M2s';
+    const mockPsychologistToken = process.env.PSYCHOLOGIST_TOKEN;
 
     const response = await supertest(app)
       .get('/psychologist/profile')
@@ -49,7 +49,7 @@ describe('Psychologist Routes', () => {
 
   it('should update psychologist profile with profile image', async () => {
     // If test failed, it's possible that token is expired. Get new token by login as psychologist
-    const mockPsychologistToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcxLCJlbWFpbCI6ImJhbWJhbmdAZ21haWwuY29tIiwibmFtZSI6IkJhbWJhbmcsIFMuUHNpIiwicm9sZSI6InBzeWNob2xvZ2lzdCIsImlhdCI6MTcwMjEyMDk4NSwiZXhwIjoxNzAyNzI1Nzg1fQ.4auVq4XG0b9UOAMcvW3dLgeQL4DkJiik7wYIryK0M2s';
+    const mockPsychologistToken = process.env.PSYCHOLOGIST_TOKEN;
 
     const response = await supertest(app)
       .put('/psychologist')
@@ -133,7 +133,7 @@ describe('Psychologist Routes', () => {
 
   it('should get psychologist dashboard', async () => {
     // If test failed, it's possible that token is expired. Get new token by login as psychologist
-    const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcxLCJlbWFpbCI6ImJhbWJhbmdAZ21haWwuY29tIiwibmFtZSI6IkJhbWJhbmcsIFMuUHNpIiwicm9sZSI6InBzeWNob2xvZ2lzdCIsImlhdCI6MTcwMjEyMDk4NSwiZXhwIjoxNzAyNzI1Nzg1fQ.4auVq4XG0b9UOAMcvW3dLgeQL4DkJiik7wYIryK0M2s';
+    const validToken = process.env.PSYCHOLOGIST_TOKEN;
 
     const response = await supertest(app)
       .get('/dashboard/psychologist')
@@ -152,7 +152,7 @@ describe('Psychologist Routes', () => {
 
   it('should update psychologist availability', async () => {
     // If test failed, it's possible that token is expired. Get new token by login as psychologist
-    const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcxLCJlbWFpbCI6ImJhbWJhbmdAZ21haWwuY29tIiwibmFtZSI6IkJhbWJhbmcsIFMuUHNpIiwicm9sZSI6InBzeWNob2xvZ2lzdCIsImlhdCI6MTcwMjEyMDk4NSwiZXhwIjoxNzAyNzI1Nzg1fQ.4auVq4XG0b9UOAMcvW3dLgeQL4DkJiik7wYIryK0M2s'; // Replace with the actual valid token
+    const validToken = process.env.PSYCHOLOGIST_TOKEN;
 
     const newAvailability = 'available';
 
@@ -171,7 +171,7 @@ describe('Psychologist Routes', () => {
 
   it('should get counseling details for a psychologist', async () => {
     // If test failed, it's possible that token is expired. Get new token by login as psychologist
-    const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcxLCJlbWFpbCI6ImJhbWJhbmdAZ21haWwuY29tIiwibmFtZSI6IkJhbWJhbmcsIFMuUHNpIiwicm9sZSI6InBzeWNob2xvZ2lzdCIsImlhdCI6MTcwMjEyMDk4NSwiZXhwIjoxNzAyNzI1Nzg1fQ.4auVq4XG0b9UOAMcvW3dLgeQL4DkJiik7wYIryK0M2s';
+    const validToken = process.env.PSYCHOLOGIST_TOKEN;
 
     const response = await supertest(app)
       .get(`/dashboard/counseling/27`)
@@ -200,8 +200,8 @@ describe('Psychologist Routes', () => {
 
   it('should update counseling status for a psychologist', async () => {
     // If test failed, it's possible that token is expired. Get new token by login as psychologist
-    const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcxLCJlbWFpbCI6ImJhbWJhbmdAZ21haWwuY29tIiwibmFtZSI6IkJhbWJhbmcsIFMuUHNpIiwicm9sZSI6InBzeWNob2xvZ2lzdCIsImlhdCI6MTcwMjEyMDk4NSwiZXhwIjoxNzAyNzI1Nzg1fQ.4auVq4XG0b9UOAMcvW3dLgeQL4DkJiik7wYIryK0M2s';
-
+    const validToken = process.env.PSYCHOLOGIST_TOKEN;
+    
     const newStatus = 'selesai';
 
     const response = await supertest(app)

@@ -8,7 +8,7 @@ const expect = require('chai').expect;
 describe('Patient Routes', () => {
   it('should show patient profile', async () => {
     // If test failed, it's possible that token is expired. Get new token by login
-    const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTc4LCJlbWFpbCI6ImFyYW1hZGhhbjM5NUBnbWFpbC5jb20iLCJuYW1lIjoiQWhtYWQgUmFtYWRoYW4gQXVuaSIsInJvbGUiOiJwYXRpZW50IiwiaWF0IjoxNzAyMTEwMzAwLCJleHAiOjE3MDI3MTUxMDB9.SvyofTRXVzgzNjRHVgY21OWjz14g3mP-nYkXRDB2Fco';
+    const mockToken = process.env.PATIENT_TOKEN;
 
     const response = await supertest(app)
       .get('/patient')
@@ -27,7 +27,8 @@ describe('Patient Routes', () => {
 
   it('should update patient profile', async () => {
     // If test failed, it's possible that token is expired. Get new token by login
-    const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTc4LCJlbWFpbCI6ImFyYW1hZGhhbjM5NUBnbWFpbC5jb20iLCJuYW1lIjoiQWhtYWQgUmFtYWRoYW4gQXVuaSIsInJvbGUiOiJwYXRpZW50IiwiaWF0IjoxNzAyMTEwMzAwLCJleHAiOjE3MDI3MTUxMDB9.SvyofTRXVzgzNjRHVgY21OWjz14g3mP-nYkXRDB2Fco';
+    const mockToken = process.env.PATIENT_TOKEN;
+
     const response = await supertest(app)
       .put('/patient')
       .set('Authorization', `Bearer ${mockToken}`)
@@ -42,7 +43,7 @@ describe('Patient Routes', () => {
   })
 
   it('should autofill fields before create counseling', async () => {
-    const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTc4LCJlbWFpbCI6ImFyYW1hZGhhbjM5NUBnbWFpbC5jb20iLCJuYW1lIjoiQWhtYWQgUmFtYWRoYW4gQXVuaSIsInJvbGUiOiJwYXRpZW50IiwiaWF0IjoxNzAyMTEwMzAwLCJleHAiOjE3MDI3MTUxMDB9.SvyofTRXVzgzNjRHVgY21OWjz14g3mP-nYkXRDB2Fco';
+    const mockToken = process.env.PATIENT_TOKEN;
 
     const response = await supertest(app)
       .get('/counselings/patient')
@@ -58,7 +59,7 @@ describe('Patient Routes', () => {
   })
 
   it('should be able to create counseling', async () => {
-    const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTc4LCJlbWFpbCI6ImFyYW1hZGhhbjM5NUBnbWFpbC5jb20iLCJuYW1lIjoiQWhtYWQgUmFtYWRoYW4gQXVuaSIsInJvbGUiOiJwYXRpZW50IiwiaWF0IjoxNzAyMTEwMzAwLCJleHAiOjE3MDI3MTUxMDB9.SvyofTRXVzgzNjRHVgY21OWjz14g3mP-nYkXRDB2Fco';
+    const mockToken = process.env.PATIENT_TOKEN;
 
     const mockUserData = {
       occupation: 'Test occupation',
@@ -98,7 +99,7 @@ describe('Patient Routes', () => {
 
   it('should show the confirmed counseling', async () => {
     // If test failed, it's possible that token is expired. Get new token by login
-    const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTc4LCJlbWFpbCI6ImFyYW1hZGhhbjM5NUBnbWFpbC5jb20iLCJuYW1lIjoiQWhtYWQgUmFtYWRoYW4gQXVuaSIsInJvbGUiOiJwYXRpZW50IiwiaWF0IjoxNzAyMTEwMzAwLCJleHAiOjE3MDI3MTUxMDB9.SvyofTRXVzgzNjRHVgY21OWjz14g3mP-nYkXRDB2Fco';
+    const mockToken = process.env.PATIENT_TOKEN;
 
     const response = await supertest(app)
       .get('/confirmedCounseling/')
@@ -115,8 +116,8 @@ describe('Patient Routes', () => {
 
   it('should get counseling history for a patient', async () => {
     // If test failed, it's possible that token is expired. Get new token by login
-    const mockPatientToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTc4LCJlbWFpbCI6ImFyYW1hZGhhbjM5NUBnbWFpbC5jb20iLCJuYW1lIjoiQWhtYWQgUmFtYWRoYW4gQXVuaSIsInJvbGUiOiJwYXRpZW50IiwiaWF0IjoxNzAyMTEwMzAwLCJleHAiOjE3MDI3MTUxMDB9.SvyofTRXVzgzNjRHVgY21OWjz14g3mP-nYkXRDB2Fco'
-
+    const mockPatientToken = process.env.PATIENT_TOKEN;
+    
     const response = await supertest(app)
       .get('/history')
       .set('Authorization', `Bearer ${mockPatientToken}`);

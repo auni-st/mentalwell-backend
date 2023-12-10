@@ -9,8 +9,7 @@ const expect = require('chai').expect;
 describe('User Routes', () => {
   it('should get current user details', async () => {
     // If test failed, it's possible that token is expired. Get new token by login
-    const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTc4LCJlbWFpbCI6ImFyYW1hZGhhbjM5NUBnbWFpbC5jb20iLCJuYW1lIjoiQWhtYWQgUmFtYWRoYW4gQXVuaSIsInJvbGUiOiJwYXRpZW50IiwiaWF0IjoxNzAyMTEwMzAwLCJleHAiOjE3MDI3MTUxMDB9.SvyofTRXVzgzNjRHVgY21OWjz14g3mP-nYkXRDB2Fco';
-
+    const mockToken = process.env.PATIENT_TOKEN;
     const response = await supertest(app)
       .get('/currentUser')
       .set('Authorization', `Bearer ${mockToken}`);
