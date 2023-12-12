@@ -20,7 +20,7 @@ router.post('/login', async (req, res, next) => {
         token = jwt.sign(
           { id: data.id, email: data.email, name: data.name, role: data.role },
           "secretkeyappearshere",
-          { expiresIn: "1w" }
+          { expiresIn: "5w" }
         );
         res.status(200).json({ message: 'success', data: { id: data.id, email: data.email, name: data.name, role: data.role, token: token } })
       } catch (err) {

@@ -174,7 +174,7 @@ describe('Psychologist Routes', () => {
     const validToken = process.env.PSYCHOLOGIST_TOKEN;
 
     const response = await supertest(app)
-      .get(`/dashboard/counseling/27`)
+      .get(`/dashboard/counseling/134`)
       .set('Authorization', `Bearer ${validToken}`);
 
     expect(response.status).to.equal(200);
@@ -205,7 +205,7 @@ describe('Psychologist Routes', () => {
     const newStatus = 'selesai';
 
     const response = await supertest(app)
-      .put(`/dashboard/counseling/27`)
+      .put(`/dashboard/counseling/134`)
       .set('Authorization', `Bearer ${validToken}`)
       .send({ newStatus });
 
