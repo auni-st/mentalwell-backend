@@ -182,10 +182,11 @@ router.get('/history', async (req, res) => {
 
   const history = await supabase.from('counselings').select('*').eq('patient_id', currentPatientData.id);
 
-  const { data, error } = await supabase.from('counselings').select(`id, schedule_date, schedule_time, type, status, review, psychologists (users(name))`).eq('patient_id', currentPatientData.id).order('status', { ascending: true })
+  const { data, error } = await supabase.from('counselings').select(`id, schedule_date, schedule_time, type, status, review, psychologists (users(name, profile_image))`).eq('patient_id', currentPatientData.id).order('status', { ascending: true }).order('schedule_date', { ascending: true })
 
   const counselingData = data.map(counseling => ({
     id: counseling.id,
+    profile_image: counseling.psychologists?.users?.profile_image,
     psychologist_name: counseling.psychologists?.users?.name,
     schedule_date: counseling.schedule_date,
     schedule_time: counseling.schedule_time,
@@ -228,13 +229,13 @@ router.get('/availability/psychologist/:id', async (req, res) => {
   const psychologistId = req.params.id;
 
   const data = await supabase.from('psychologists').select('id, users(name), availability').eq('id', psychologistId).single();
-  
+
   const cleanedResponse = {
     id: data.data.id,
     name: data.data.users.name,
     availability: data.data.availability
   }
-  
+
   res.status(200).json(cleanedResponse)
 })
 
