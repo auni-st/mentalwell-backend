@@ -17,7 +17,7 @@ describe('Article Routes', () => {
       .field('title', 'Test Article')
       .field('content', 'This is a test article content.')
       .field('references', 'Test references')
-      .attach('image', 'test/articles/cat2.jpg'); // Adjust the path accordingly
+      .attach('image', 'test/articles/cat2.jpg'); 
 
     expect(response.status).to.equal(201);
     expect(response.body).to.have.property('message', 'article create success');
