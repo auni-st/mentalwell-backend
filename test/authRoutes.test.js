@@ -11,7 +11,7 @@ describe('Auth Routes', () => {
   it('should log in a user with valid credentials', async () => {
     const mockUserData = {
       email: 'aramadhan395@gmail.com',
-      password: 'password12345',
+      password: 'password123',
     };
 
     const response = await supertest(app)
