@@ -13,4 +13,5 @@ Repository ini berisi aplikasi backend dari website MentalWell. Aplikasi ini men
 2. Jalankan server development dengan `npm run start:dev`
 
 ## Dokumentasi API menggunakan Postman
+Untuk menguji coba API, tautan yang digunakan yaitu https://mentalwell-backend.vercel.app disertai dengan API yang disediakan pada dokumentasi API berikut.  
 [Dokumentasi API dengan Postman](https://documenter.getpostman.com/view/21036341/2s9Ye8fZx3)
